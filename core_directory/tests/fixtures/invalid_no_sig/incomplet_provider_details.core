@@ -1,0 +1,5 @@
+CAPI=2:
+name: vendor:library:core:1.0.0
+description: "A core file with incomplite provider details."
+provider:
+  name: github

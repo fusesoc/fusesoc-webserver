@@ -1,0 +1,27 @@
+<td class="clickable-cell align-middle">
+    <a href="{% url 'core-detail-vlnv' vendor=core_package.project.vendor.sanitized_name library=core_package.project.library.sanitized_name|default:"~" core=core_package.project.sanitized_name version=core_package.version %}" class="section-link">
+        <b>{{ core_package }}</b>
+        {% if core_package.is_signed %}
+        <span class="badge bg-success py-1 ms-2">
+            <i class="bi bi-shield-check"></i>
+            signed
+        </span>
+        {% else %}
+        <span class="badge bg-danger py-1 ms-2">
+            <i class="bi bi-shield-exclamation"></i>
+            unsigned
+        </span>
+        {% endif %}
+        <div class="text-muted small">{{ core_package.description|truncatechars:80 }}</div>
+    </a>
+</td>
+<td class="align-middle">
+    <a href="{{ core_package.core_url }}" class="btn btn-outline-primary btn-sm me-1" title="Download .core file">
+        <i class="bi bi-file-earmark-code"></i> .core
+    </a>
+    {% if core_package.is_signed %}
+        <a href="{{ core_package.sig_url }}" class="btn btn-outline-secondary btn-sm" title="Download .sig file">
+            <i class="bi bi-file-earmark-medical"></i> .sig
+        </a>
+    {% endif %}
+</td>

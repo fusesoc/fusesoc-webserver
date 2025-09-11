@@ -1,0 +1,8 @@
+CAPI=2:
+name: :library:core:1.0.0
+description: "A core file without vendor."
+provider:
+  name: github
+  user: myuser
+  repo: myrepo
+  version: "0123456789abcdef0123456789abcdef01234567"

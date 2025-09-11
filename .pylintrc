@@ -1,0 +1,23 @@
+[MASTER]
+load-plugins = pylint_django
+django-settings-module = project.settings
+
+ignore=
+    __pycache__,
+    .venv,
+    docs,
+    manage.py,
+    media,
+    migrations,
+    static,
+    staticfiles,
+    tests
+
+[FORMAT]
+max-line-length = 120
+
+[DESIGN]
+max-locals = 20
+
+[REPORTS]
+output-format = colorized

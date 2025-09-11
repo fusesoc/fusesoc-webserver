@@ -1,0 +1,7 @@
+.table a,
+.table a:visited,
+.table a:hover,
+.table a:active,
+.table a:focus {
+    text-decoration: none !important;
+}
