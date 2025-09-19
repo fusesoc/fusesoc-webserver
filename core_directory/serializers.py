@@ -324,7 +324,7 @@ class CoreSerializer(serializers.Serializer):
                 )
             }
         }
-        key = '::'.join(e.path)
+        key = '::'.join(e.absolute_path)
         default_message = {'default': e.message}
         error_message =  validator_error_messages.get(key, default_message).get(e.validator, e.message)
-        return f'Validation error in {file_type}::{key}: {error_message}'
+        return f'Validation error in {file_type} file at {key or 'root'}: {error_message}'
