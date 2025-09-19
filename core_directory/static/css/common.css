@@ -1,0 +1,59 @@
+.container {
+    max-width: 1024px;
+    margin: 0 auto;
+    background-color: #fff;
+    padding: 10px 20px 10px 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.07);
+}
+
+/* Footer */
+.footer {
+    border-top: 1px solid #e9ecef;
+    margin-top: 2em;
+    color: #888;
+}
+
+.section-card {
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    background: #fff;
+    margin-bottom: 1.5rem;
+}
+.section-header {
+    cursor: pointer;
+    background: #f8f9fa;
+    font-weight: 500;
+    border-radius: 0.5rem 0.5rem 0 0;
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    font-size: 1.1rem;
+}
+.section-content {
+    display: none;
+    background: #fff;
+    border-radius: 0 0 0.5rem 0.5rem;
+    padding: 1rem;
+}
+.section-title {
+    font-size: 1.2rem;
+    font-weight: 500;
+    margin-bottom: 1rem;
+    color: #fff;
+    display: flex;
+    align-items: center;
+}
+.expand-toggle {
+    cursor: pointer;
+    margin-right: 0.5rem;
+    font-size: 1.1rem;
+    color: #000;
+}
+.section-link {
+    text-decoration: none !important;
+    color: inherit;
+}
+.clickable-cell {
+    cursor: pointer;
+}

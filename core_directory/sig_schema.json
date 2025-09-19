@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "coresig": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_-]+:[a-zA-Z0-9_-]*:[a-zA-Z0-9_-]+:\\d+\\.\\d+\\.\\d+$"
+        },
+        "signatures": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "signature": {
+                "type": "string",
+                "pattern": "^-----BEGIN SSH SIGNATURE-----[\\s\\S]*-----END SSH SIGNATURE-----$"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "ssh-dsa",
+                  "ssh-ecdsa",
+                  "ssh-ecdsa-sk",
+                  "ssh-ed25519",
+                  "ssh-rsa",
+                  "ssh-ed25519-sk"
+                ]
+              },
+              "user_id": {
+                "type": "string",
+                "format": "email"
+              }
+            },
+            "required": ["signature", "type", "user_id"]
+          }
+        }
+      },
+      "required": ["name", "signatures"]
+    }
+  },
+  "required": ["coresig"]
+}

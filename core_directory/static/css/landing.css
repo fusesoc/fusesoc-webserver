@@ -1,0 +1,129 @@
+
+/* Hero Section */
+.hero-section {
+    background: var(--bs-primary);
+    color: #fff;
+    padding: 3rem 0 2rem 0;
+    text-align: center;
+    border-radius: 0 0 1.5rem 1.5rem;
+    margin-bottom: 2rem;
+}
+.hero-title {
+    color: #000;
+    font-size: 2.5rem;
+    font-weight: 700;
+    letter-spacing: -1px;
+}
+.hero-tagline {
+    font-size: 1.25rem;
+    color: #bfc7d5;
+    margin-bottom: 2rem;
+}
+
+/* Search Bar */
+.hero-search {
+    max-width: 500px;
+    margin: 0 auto 2rem auto;
+}
+.hero-search .form-control {
+    height: 48px !important;
+    font-size: 1rem;
+    border-radius: 4px 0 0 4px;
+}
+.hero-search .btn,
+.hero-search-btn {
+    height: 48px !important;
+    padding: 0 12px !important;
+    border-radius: 0 4px 4px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.hero-search .btn i {
+    font-size: 1.1em;
+    line-height: 1;
+    margin: 0;
+}
+
+/* Stats Section */
+.stats-section {
+    display: flex;
+    justify-content: center;
+    gap: 2.5rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    padding-top: 1.5rem;
+}
+.stat-card-link {
+    text-decoration: none !important;
+    color: inherit;
+    display: inline-block;
+}
+.stat-card-link:hover,
+.stat-card-link:focus {
+    text-decoration: none !important;
+    color: inherit;
+}
+.stat-card-link .stat-card {
+    transition: background 0.2s;
+}
+.stat-card-link:hover .stat-card,
+.stat-card-link:focus .stat-card {
+    background: #f0f4fa;
+}
+.stat-card {
+    background: #fff;
+    border-radius: 1rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    padding: 1.5rem 2.5rem;
+    min-width: 180px;
+    text-align: center;
+}
+.stat-value {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #007bff;
+}
+.stat-label {
+    font-size: 1.1rem;
+    color: #555;
+}
+
+/* Description Section */
+.desc-section {
+    max-width: 700px;
+    margin: 2rem auto 2.5rem auto;
+    text-align: center;
+    color: #333;
+}
+
+/* Links Section */
+.links-section {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+    margin-bottom: 2.5rem;
+}
+.links-section a {
+    color: #007bff;
+    font-weight: 500;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+.links-section a:hover {
+    color: #0056b3;
+    text-decoration: underline;
+}
+
+
+
+/* Responsive Tweaks */
+@media (max-width: 600px) {
+    .container {
+        padding: 10px 2px 30px 2px;
+    }
+    .hero-title { font-size: 1.5rem; }
+    .stat-card { padding: 1rem; min-width: 120px; }
+    .stats-section { gap: 1rem; }
+}

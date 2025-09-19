@@ -1,0 +1,29 @@
+# Core framework
+Django==5.2.1
+
+# REST framework for building APIs
+djangorestframework==3.16.0
+
+# OpenAPI 3.0 schema generation for DRF
+drf-spectacular==0.28.0
+
+# GitHub API client
+PyGithub==2.6.1
+
+# Git library
+gitpython== 3.1.45
+
+# JSON schema validation
+jsonschema==4.24.0
+
+# YAML parsing
+pyyaml==6.0.2
+
+# FuseSoC package manager
+fusesoc==2.4.4
+
+# Semantic Versioning
+semver==3.0.4
+
+# Read .env file
+python-dotenv==1.1.1

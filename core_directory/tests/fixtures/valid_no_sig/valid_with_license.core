@@ -1,0 +1,9 @@
+CAPI=2:
+name: vendor:lib:licensed_core:1.0.0
+description: "Another valid core file with a license."
+license: "BSD-2-Clause"
+provider:
+  name: github
+  user: myuser
+  repo: myrepo
+  version: "release-2024-09"

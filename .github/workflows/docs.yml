@@ -1,0 +1,49 @@
+name: Build and Deploy Docs
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+
+permissions:
+  contents: read
+  id-token: write
+  pages: write
+
+env:
+  DJANGO_SECRET_KEY: dummysecretkeyforci
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+      - name: Build docs (fail on warnings)
+        run: sphinx-build -b html -W docs/source docs/build
+
+  deploy-docs:
+    needs: build-docs
+    if: github.ref == 'refs/heads/${{ github.default_branch }}'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+      - name: Build docs
+        run: sphinx-build -b html docs/source docs/build
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/build
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4

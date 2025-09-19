@@ -1,0 +1,46 @@
+# Python cache and bytecode files
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+.venv/
+
+# Distribution / packaging
+build/
+dist/
+*.egg
+*.whl
+
+# Django specific
+*.log
+*.pot
+*.pyc
+*.pyo
+*.sqlite3
+
+# Unit test / coverage reports
+.coverage
+.tox/
+.nox/
+*.cover
+coverage.xml
+htmlcov/
+
+# Static and media files (if managed outside Docker)
+staticfiles/
+media/
+
+# IDE and editor files
+.vscode/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Git repository
+.git/
+
+# Docker-specific files
+Dockerfile
+docker-compose.yml
+.dockerignore
