@@ -205,3 +205,8 @@ This repository includes recommended Visual Studio Code settings and launch conf
 FuseSoC is licensed under the permissive 2-clause BSD license, freely allowing use, modification, and distribution of FuseSoC Package Directory for all kinds of projects.
 
 For more details, see the [LICENSE](LICENSE) file.
+
+---
+
+![NLNet logo](https://nlnet.nl/logo/banner.svg)
+[This project](https://nlnet.nl/project/FuseSoC-catalog/) was sponsored by [NLNet Foundation](https://nlnet.nl) through the [NGI0 Commons Fund](https://nlnet.nl/commonsfund/)
