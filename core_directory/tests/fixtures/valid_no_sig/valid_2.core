@@ -1,0 +1,8 @@
+CAPI=2:
+name: vendor:lib:core:2.3.4-beta
+description: "Another valid core file with a pre-release version."
+provider:
+  name: github
+  user: myuser
+  repo: myrepo
+  version: "release-2024-09"

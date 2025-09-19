@@ -1,0 +1,6 @@
+<td class="clickable-cell align-middle">
+    <a href="{% url 'vendor-detail' sanitized_name=vendor.sanitized_name %}" class="section-link">
+        <b>{{ vendor }}</b>
+        <div class="text-muted small">Providing {{ vendor.num_cores }} core{{ vendor.num_libraries|pluralize:",s" }} in {{ vendor.num_libraries }} librar{{ vendor.num_libraries|pluralize:"y,ies" }}.</div>
+    </a>
+</td>

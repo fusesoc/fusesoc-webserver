@@ -1,0 +1,11 @@
+CAPI=2:
+name: vendor:lib:core:1.0.0
+description: "Another valid core with invalid license."
+license:
+  name: "Custom License"
+  text: "Some custom license text"
+provider:
+  name: github
+  user: myuser
+  repo: myrepo
+  version: "release-2024-09"

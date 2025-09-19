@@ -1,0 +1,9 @@
+CAPI=2:
+name: vendor:lib:core:1.0.0
+description: "Another valid core with invalid license."
+license: "THIS_IS_NOT_AN_SPDX_LICENSE"
+provider:
+  name: github
+  user: myuser
+  repo: myrepo
+  version: "release-2024-09"
