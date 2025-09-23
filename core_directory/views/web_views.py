@@ -15,6 +15,11 @@ def landing(request):
                   }
                 )
 
+def core_publish(request):
+    """Render the page to publish a core."""
+    return render(request, 'web_ui/core_publish.html')
+
+
 def core_package_list(request):
     """Render a list of core packages, optionally filtered by search query."""
     search_query = request.GET.get('search', '')

@@ -24,8 +24,9 @@ from django.urls import include, path
 from core_directory.views.web_views import (
     landing,
     core_detail,
-    core_package_list,
     core_detail_by_vlnv,
+    core_package_list,
+    core_publish,
     vendor_list,
     vendor_detail
 )
@@ -33,6 +34,7 @@ from core_directory.views.web_views import (
 urlpatterns = [
 
     path('', landing, name='landing'),
+    path('publish', core_publish, name='core-publish'),
     path('core/<int:pk>/', core_detail, name='core-detail'),
 
     path('cores/', core_package_list, name='core-package-list'),

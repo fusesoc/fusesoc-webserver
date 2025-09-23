@@ -21,6 +21,15 @@ def test_landing_view(client):
     assert response.context["num_vendors"] == 1
 
 @pytest.mark.django_db
+def test_core_publish_view(client):
+    url = reverse('core-publish')  # Use the name from your urls.py
+    response = client.get(url)
+    assert response.status_code == 200
+    # Check that the correct template was used
+    templates = [t.name for t in response.templates]
+    assert 'web_ui/core_publish.html' in templates
+
+@pytest.mark.django_db
 def test_landing_view_two_cores(client):
     vendor = Vendor.objects.create(name="Acme")
     library = Library.objects.create(vendor=vendor, name="Lib1")
