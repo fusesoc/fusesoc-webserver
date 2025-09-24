@@ -1,5 +1,40 @@
 let lastValidatedCore = null; // { blob, filename }
 
+// --- Utility functions ---
+function formatApiError(result) {
+    if (typeof result === 'string') {
+        return result;
+    }
+    if (typeof result === 'object' && result !== null) {
+        let messages = [];
+        // Handle top-level "message"
+        if (typeof result.message === 'string') {
+            messages.push(result.message);
+        }
+        // Handle non_field_errors
+        if (Array.isArray(result.non_field_errors)) {
+            messages = messages.concat(result.non_field_errors);
+        }
+        // Handle field-specific errors
+        for (const [field, errors] of Object.entries(result)) {
+            if (field === 'non_field_errors' || field === 'message') continue;
+            if (Array.isArray(errors)) {
+                errors.forEach(msg => {
+                    messages.push(`<strong>${field}:</strong> ${msg}`);
+                });
+            }
+        }
+        if (messages.length > 0) {
+            return messages.map(msg => `<div>${msg}</div>`).join('');
+        }
+        // Fallback: show as JSON
+        return `<pre>${JSON.stringify(result, null, 2)}</pre>`;
+    }
+    // Fallback: show as string
+    return String(result);
+}
+
+// --- Main logic ---
 document.addEventListener('DOMContentLoaded', function() {
 
     /**
@@ -30,7 +65,7 @@ document.addEventListener('DOMContentLoaded', function() {
             ${getCardHeaderHtml("bi-github", "Repository details")}
             <div class="card-body">
                 <h5 class="card-title">
-                <a href="${obj.repo.url}" target="_blank">${obj.repo.name}</a>
+                <a href="${obj.repo.url}" target="_blank"><strong>${obj.repo.name}</strong></a><span class="fs-6">@${obj.parsed_version}</span>
                 </h5>
                 <p class="card-text">${obj.repo.description || ''}</p>
                 <p class="card-text">
@@ -42,7 +77,10 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
         }
         if (obj.core_files) {
-            html += `${getCardHeaderHtml("bi-boxes", "Available cores")}`;
+            html += `
+                <div class="card mb-3">
+                ${getCardHeaderHtml("bi-boxes", "Select core")}
+                <div class="p-3">`;
             if (obj.core_files.length > 0) {
                 html += `
                     <div class="input-group mb-3">
@@ -63,6 +101,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </span>
                     </div>`;  
             }
+            html += `</div></div>`;
         }
         // html += `<pre>${JSON.stringify(obj, null, 2)}</pre>`;
         resultDiv.innerHTML = html;
@@ -327,7 +366,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 result = respText;
             }
         } catch (err) {
-            validateResultDiv.innerHTML = '<div class="alert alert-danger">Error during validation.</div>';
+            validateResultDiv.innerHTML = '<div class="alert alert-danger"><strong>Error during validation.</strong></div>';
             return;
         }
 
@@ -336,7 +375,6 @@ document.addEventListener('DOMContentLoaded', function() {
             validateResultDiv.innerHTML =
                 `<div class="alert alert-success">
                     Validation successful!<br>
-                    <pre>${JSON.stringify(result, null, 2)}</pre>
                 </div>`;
             if (publishBtn) {
                 publishBtn.disabled = false;
@@ -345,14 +383,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } else {
             lastValidatedCore = null;
-            let errorMsg = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
             validateResultDiv.innerHTML =
-                `<div class="alert alert-danger">Validation failed:<br><pre>${errorMsg}</pre></div>`;
-            if (publishBtn) {
-                publishBtn.disabled = true;
-                publishBtn.classList.remove('btn-success');
-                publishBtn.classList.add('btn-secondary');
-            }
+                `<div class="alert alert-danger"><strong>Validation failed!</strong><br>${formatApiError(result)}</div>`;
         }
     }
 
@@ -389,13 +421,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (publishResponse.ok) {
                 document.getElementById('validate-result').innerHTML =
-                    `<div class="alert alert-success">Publish successful!<br><pre>${JSON.stringify(result, null, 2)}</pre></div>`;
+                    `<div class="alert alert-success"><strong>Published successful!</strong></div>`;
             } else {
                 document.getElementById('validate-result').innerHTML =
-                    `<div class="alert alert-danger">Publish failed:<br><pre>${JSON.stringify(result, null, 2)}</pre></div>`;
+                    `<div class="alert alert-danger"><strong>Publishing failed!</strong><br>${formatApiError(result)}</div>`;
             }
         } catch (err) {
-            document.getElementById('validate-result').innerHTML = 'Error during publish.';
+            document.getElementById('validate-result').innerHTML = 
+                    `<div class="alert alert-danger"><strong>Error during publish.</strong></div>`;
         }
     }
 
@@ -420,6 +453,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (!handleGithubApiResponse(repoData, 'Repository not found.')) return;
 
                 function processSha(sha, extra) {
+                    let versionStr = ``;
+                    if (versionType === 'tag') {
+                        versionStr += `${document.getElementById('tag').value}`;
+                    } else if (versionType === 'commit') {
+                        versionStr += `${document.getElementById('commit').value}`;
+                    } else {
+                        versionStr += 'latest';
+                    }
                     listCoreFiles(info.owner, info.repo, sha)
                         .then(coreFiles => {
                             showResult({
@@ -430,6 +471,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                     forks: repoData.forks_count,
                                     url: repoData.html_url,
                                 },
+                                parsed_version: versionStr,
                                 ...extra,
                                 core_files: coreFiles,
                             });

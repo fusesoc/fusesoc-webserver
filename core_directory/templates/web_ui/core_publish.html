@@ -19,31 +19,36 @@
     <div class="card shadow-sm mb-4">
         {% include "web_ui/includes/card_header.html" with icon="bi bi-box" title="Publish new core" %}
         <div class="card-body">
-            <form id="repo-form" autocomplete="off" class="row g-2 align-items-center">
-                <div class="col-auto">
-                    <label for="repo_url" class="visually-hidden">GitHub Repository URL</label>
-                    <input type="url" id="repo_url" name="repo_url" class="form-control" style="min-width:350px; width:400px;" required placeholder="https://github.com/owner/repo">
+            <div class="card shadow-sm mb-3">           
+                {% include "web_ui/includes/card_header.html" with icon="bi bi-shop" title="Select GitHub repository" %}
+                <div class="p-3">
+                    <form id="repo-form" autocomplete="off" class="row g-2 align-items-center">
+                        <div class="col-auto">
+                            <label for="repo_url" class="visually-hidden">GitHub Repository URL</label>
+                            <input type="url" id="repo_url" name="repo_url" class="form-control" style="min-width:350px; width:400px;" required placeholder="https://github.com/owner/repo">
+                        </div>
+                        <div class="col-auto">
+                            <label for="version_type" class="visually-hidden">Version Type</label>
+                            <select id="version_type" name="version_type" class="form-select" required>
+                                <option value="tag">Tag</option>
+                                <option value="latest">Latest</option>
+                                <option value="commit">Commit</option>
+                            </select>
+                        </div>
+                        <div class="col-auto" id="tag-field" style="display:none;">
+                            <label for="tag" class="visually-hidden">Tag</label>
+                            <select id="tag" name="tag" class="form-select"></select>
+                        </div>
+                        <div class="col-auto" id="commit-field" style="display:none;">
+                            <label for="commit" class="visually-hidden">Commit Hash</label>
+                            <input type="text" id="commit" name="commit" class="form-control" placeholder="e.g. 1a2b3c4d">
+                        </div>
+                        <div class="col-auto">
+                            <button type="submit" class="btn btn-primary">Parse</button>
+                        </div>
+                    </form>
                 </div>
-                <div class="col-auto">
-                    <label for="version_type" class="visually-hidden">Version Type</label>
-                    <select id="version_type" name="version_type" class="form-select" required>
-                        <option value="tag">Tag</option>
-                        <option value="latest">Latest</option>
-                        <option value="commit">Commit</option>
-                    </select>
-                </div>
-                <div class="col-auto" id="tag-field" style="display:none;">
-                    <label for="tag" class="visually-hidden">Tag</label>
-                    <select id="tag" name="tag" class="form-select"></select>
-                </div>
-                <div class="col-auto" id="commit-field" style="display:none;">
-                    <label for="commit" class="visually-hidden">Commit Hash</label>
-                    <input type="text" id="commit" name="commit" class="form-control" placeholder="e.g. 1a2b3c4d">
-                </div>
-                <div class="col-auto">
-                    <button type="submit" class="btn btn-primary">Parse</button>
-                </div>
-            </form>
+            </div>
             <div id="result"></div>
         </div>
     </div>
