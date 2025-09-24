@@ -200,14 +200,14 @@ snowballstemmer==3.0.1
     # via sphinx
 sphinx==8.2.3
     # via
-    #   -r requirements.in
+    #   -r requirements-dev.in
     #   sphinx-autodoc-typehints
     #   sphinx-rtd-theme
     #   sphinxcontrib-jquery
 sphinx-autodoc-typehints==3.2.0
-    # via -r requirements.in
+    # via -r requirements-dev.in
 sphinx-rtd-theme==3.0.2
-    # via -r requirements.in
+    # via -r requirements-dev.in
 sphinxcontrib-applehelp==2.0.0
     # via sphinx
 sphinxcontrib-devhelp==2.0.0
@@ -240,6 +240,8 @@ urllib3==2.4.0
     #   requests
 wheel==0.45.1
     # via pip-tools
+whitenoise==6.11.0
+    # via -r requirements.in
 wrapt==1.17.2
     # via deprecated
 
