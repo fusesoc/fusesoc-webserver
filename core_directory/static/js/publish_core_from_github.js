@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     /**
-     * Renders the result area with repository and core file info.
+     * Renders the result area with repository and core file info, using a Bootstrap dropdown for core selection.
      * @param {object} obj
      */
     function showResult(obj) {
@@ -65,7 +65,8 @@ document.addEventListener('DOMContentLoaded', function() {
             ${getCardHeaderHtml("bi-github", "Repository details")}
             <div class="card-body">
                 <h5 class="card-title">
-                <a href="${obj.repo.url}" target="_blank"><strong>${obj.repo.name}</strong></a><span class="fs-6">@${obj.parsed_version}</span>
+                <a href="${obj.repo.url}" target="_blank"><strong>${obj.repo.name}</strong></a>
+                <span class="fs-6">@${obj.parsed_version}</span>
                 </h5>
                 <p class="card-text">${obj.repo.description || ''}</p>
                 <p class="card-text">
@@ -81,49 +82,73 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="card mb-3">
                 ${getCardHeaderHtml("bi-boxes", "Select core")}
                 <div class="p-3">`;
-            if (obj.core_files.length > 0) {
-                html += `
-                    <div class="input-group mb-3">
-                        <select id="core-file-select" class="form-select">
-                            ${obj.core_files.map(f => `<option value="${f}">${f}</option>`).join('')}
-                        </select>
-                        <button id="validate-core-btn" type="button" class="btn btn-primary">Validate</button>
-                        <button id="publish-core-btn" type="button" class="btn btn-secondary" disabled>Publish</button>
-                    </div>
-                    <div id="validate-result" style="margin-top:1em;"></div>
-                `;
-            } else {
-                html +=                    
-                    `<div class="alert alert-warning">
-                        <strong>No <code>.core</code> files found in the repository.</strong><br>
-                        <span class="text-muted">
-                            Note: Only <code>.core</code> files located in the root of the repository can be published.
-                        </span>
-                    </div>`;  
-            }
+                if (obj.core_files.length > 0) {
+                    const defaultCore = obj.core_files[0].core;
+                    const defaultHasSig = obj.core_files[0].hasSig;
+                    html += `
+                        <div class="d-flex w-100 align-items-stretch gap-2 mb-3">
+                            <div class="dropdown flex-grow-1">
+                                <button class="btn btn-outline-primary dropdown-toggle w-100 d-flex justify-content-between align-items-center" type="button" id="coreDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <span id="coreDropdownLabel" class="text-truncate">${defaultCore}</span>
+                                    <span class="d-flex align-items-center">
+                                        ${defaultHasSig ? '<span id="coreDropdownBadge" class="badge bg-success ms-2"><i class="bi bi-shield-check"></i> signed</span>' : '<span id="coreDropdownBadge"></span>'}
+                                    </span>
+                                </button>
+                                <ul class="dropdown-menu w-100" aria-labelledby="coreDropdown">
+                                    ${obj.core_files.map(f => `
+                                        <li>
+                                            <a class="dropdown-item core-dropdown-item d-flex align-items-center justify-content-between" href="#" data-core="${f.core}" data-has-sig="${f.hasSig}">
+                                                <span>${f.core}</span>
+                                                ${f.hasSig
+                                                    ? '<span class="badge bg-success ms-2"><i class="bi bi-shield-check"></i> signed</span>'
+                                                    : '<span class="badge bg-danger py-1 ms-2"><i class="bi bi-shield-exclamation"></i> unsigned</span>'
+                                                }
+                                            </a>
+                                        </li>
+                                    `).join('')}
+                                </ul>
+                            </div>
+                            <button id="validate-core-btn" type="button" class="btn btn-primary">Validate</button>
+                            <button id="publish-core-btn" type="button" class="btn btn-secondary" disabled>Publish</button>
+                        </div>
+                        <div id="validate-result" style="margin-top:1em;"></div>
+                    `;
+                } else {
+                    html +=                    
+                        `<div class="alert alert-warning">
+                            <strong>No <code>.core</code> files found in the repository.</strong><br>
+                            <span class="text-muted">
+                                Note: Only <code>.core</code> files located in the root of the repository can be published.
+                            </span>
+                        </div>`;  
+                }
             html += `</div></div>`;
         }
-        // html += `<pre>${JSON.stringify(obj, null, 2)}</pre>`;
         resultDiv.innerHTML = html;
 
-        // Add event listeners
-        const validateBtn = document.getElementById('validate-core-btn');
-        const publishBtn = document.getElementById('publish-core-btn');
-        const select = document.getElementById('core-file-select');
+        // --- Dropdown and button event handlers ---
+        let selectedCore = obj.core_files && obj.core_files[0] ? obj.core_files[0].core : null;
+        let selectedHasSig = obj.core_files && obj.core_files[0] ? obj.core_files[0].hasSig : false;
 
-        if (validateBtn) {
-            validateBtn.addEventListener('click', function() {
-                const coreFilePath = select.value;
-                validateCoreFile(obj, coreFilePath);
-            });
-        }
-        if (publishBtn) {
-            publishBtn.addEventListener('click', publishCoreFile);
-        }
-        if (select) {
-            select.addEventListener('change', function() {
+        // Dropdown item click: update label, badge, and selectedCore
+        document.querySelectorAll('.core-dropdown-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                selectedCore = this.getAttribute('data-core');
+                selectedHasSig = this.getAttribute('data-has-sig') === 'true';
+                document.getElementById('coreDropdownLabel').textContent = selectedCore;
+                // Update badge
+                const badgeElem = document.getElementById('coreDropdownBadge');
+                if (selectedHasSig) {
+                    badgeElem.className = 'badge bg-success ms-2';
+                    badgeElem.innerHTML = '<i class="bi bi-shield-check"></i> signed';
+                } else {
+                    badgeElem.className = '';
+                    badgeElem.innerHTML = '';
+                }
                 // Clear validation result and disable publish when selection changes
                 document.getElementById('validate-result').innerHTML = '';
+                const publishBtn = document.getElementById('publish-core-btn');
                 if (publishBtn) {
                     publishBtn.disabled = true;
                     publishBtn.classList.remove('btn-success');
@@ -131,6 +156,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 lastValidatedCore = null;
             });
+        });
+
+        // Validate button uses selectedCore
+        const validateBtn = document.getElementById('validate-core-btn');
+        if (validateBtn) {
+            validateBtn.addEventListener('click', function() {
+                if (selectedCore) {
+                    validateCoreFile(obj, selectedCore);
+                }
+            });
+        }
+
+        // Publish button
+        const publishBtn = document.getElementById('publish-core-btn');
+        if (publishBtn) {
+            publishBtn.addEventListener('click', publishCoreFile);
         }
     }
 
@@ -249,11 +290,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     /**
-     * Lists all .core files in the repo at the given SHA.
+     * Lists all .core files in the repo root at the given SHA, and checks for signature files.
      * @param {string} owner
      * @param {string} repo
      * @param {string} sha
-     * @returns {Promise<string[]>}
+     * @returns {Promise<Array<{core: string, hasSig: boolean}>>}
      */
     async function listCoreFiles(owner, repo, sha) {
         const treeUrl = `https://api.github.com/repos/${owner}/${repo}/git/trees/${sha}?recursive=1`;
@@ -262,13 +303,18 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
             if (!handleGithubApiResponse(data, 'Error listing .core files.')) return [];
             if (!data.tree) return [];
-            return data.tree
-                .filter(item => 
-                    item.type === 'blob' && 
-                    item.path.endsWith('.core') &&
-                    !item.path.includes('/') // Only root files                
-                )
+            // Get all file paths in the tree
+            const allFiles = data.tree
+                .filter(item => item.type === 'blob')
                 .map(item => item.path);
+            // Only root .core files
+            const coreFiles = allFiles.filter(path => path.endsWith('.core') && !path.includes('/'));
+            const fileSet = new Set(allFiles);
+            // Map to objects with signature info
+            return coreFiles.map(corePath => ({
+                core: corePath,
+                hasSig: fileSet.has(corePath + '.sig')
+            }));
         } catch (err) {
             showResult({ error: 'Error listing .core files.' });
             return [];
@@ -291,30 +337,25 @@ document.addEventListener('DOMContentLoaded', function() {
         validateResultDiv.innerHTML = 'Validating...';
 
         const rawUrl = `https://raw.githubusercontent.com/${obj.repo.name}/${obj.commit}/${coreFilePath}`;
+        const sigUrl = rawUrl + '.sig';
 
-        let text;
+        let text, sigBlob = null;
         try {
+            // Fetch core file
             const response = await fetch(rawUrl);
             if (!response.ok) {
-                if (response.status === 403) {
-                    let errMsg = 'Could not fetch core file from GitHub (403 Forbidden).';
-                    try {
-                        const errData = await response.json();
-                        if (errData && errData.message && errData.message.includes('API rate limit exceeded')) {
-                            errMsg = 'GitHub API rate limit exceeded. Please wait and try again later.';
-                        } else if (errData && errData.message) {
-                            errMsg = `GitHub API error: ${errData.message}`;
-                        }
-                    } catch {}
-                    validateResultDiv.innerHTML = `<div class="alert alert-danger">${errMsg}</div>`;
-                    return;
-                }
                 validateResultDiv.innerHTML = '<div class="alert alert-danger">Could not fetch core file from GitHub.</div>';
                 return;
             }
             text = await response.text();
+
+            // Try to fetch signature file (optional)
+            const sigResponse = await fetch(sigUrl);
+            if (sigResponse.ok) {
+                sigBlob = await sigResponse.blob();
+            }
         } catch (err) {
-            validateResultDiv.innerHTML = '<div class="alert alert-danger">Error fetching core file.</div>';
+            validateResultDiv.innerHTML = '<div class="alert alert-danger">Error fetching core or signature file.</div>';
             return;
         }
 
@@ -329,11 +370,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (coreObj && typeof coreObj === 'object' && 'provider' in coreObj) {
             validateResultDiv.innerHTML =
                 `<div class="alert alert-warning">
-                    This .core file reffers to an external <code>provider</code> and therefore can not be uploaded via web interface<br>
+                    This .core file refers to an external <code>provider</code> and therefore cannot be uploaded via web interface.<br>
                     <strong>Reason:</strong> Only core files <b>without</b> a provider section are accepted. The .core file and its source files need to be located in the same repository.
-                    <strong>Hint:</strong> To publish core files reffering to a github in its provider section, please use the API directly.
-                </div>`;  
-              return;
+                    <strong>Hint:</strong> To publish core files referring to a github in its provider section, please use the API directly.
+                </div>`;
+            return;
         }
 
         // Add provider section
@@ -346,11 +387,13 @@ document.addEventListener('DOMContentLoaded', function() {
         };
 
         const newYaml = jsyaml.dump(coreObj);
-
         const blob = new Blob([newYaml], { type: "application/x-yaml" });
 
         const formData = new FormData();
         formData.append('core_file', blob, coreFilePath);
+        if (sigBlob) {
+            formData.append('signature_file', sigBlob, coreFilePath + '.sig');
+        }
 
         let validateResponse, respText, result;
         try {
@@ -371,7 +414,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         if (validateResponse.ok) {
-            lastValidatedCore = { blob, filename: coreFilePath };
+            lastValidatedCore = { blob, filename: coreFilePath, sigBlob };
             validateResultDiv.innerHTML =
                 `<div class="alert alert-success">
                     Validation successful!<br>
@@ -403,6 +446,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const formData = new FormData();
         formData.append('core_file', lastValidatedCore.blob, lastValidatedCore.filename);
+        if (lastValidatedCore.sigBlob) {
+            formData.append('signature_file', lastValidatedCore.sigBlob, lastValidatedCore.filename + '.sig');
+        }
 
         try {
             const publishResponse = await fetch('/api/v1/publish/', {
@@ -427,8 +473,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     `<div class="alert alert-danger"><strong>Publishing failed!</strong><br>${formatApiError(result)}</div>`;
             }
         } catch (err) {
-            document.getElementById('validate-result').innerHTML = 
-                    `<div class="alert alert-danger"><strong>Error during publish.</strong></div>`;
+            document.getElementById('validate-result').innerHTML =
+                `<div class="alert alert-danger"><strong>Error during publish.</strong></div>`;
         }
     }
 
