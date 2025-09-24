@@ -50,6 +50,11 @@ FuseSoC-PD is ideal for teams and communities who want a reliable, transparent, 
     ```
     App runs at [http://localhost:8000](http://localhost:8000).
 
+    > **Note on static files:**  
+    > Static files are automatically collected to the `/staticfiles` directory inside the Docker container during build or startup.  
+    > By default, static files are served by [WhiteNoise](https://whitenoise.evans.io/) within the Django application.  
+    > For larger or production deployments, you may optionally configure a dedicated web server (such as Nginx or Caddy) to serve static files from `/staticfiles`.
+
 ---
 
 ## Database Consistency & Initialization
