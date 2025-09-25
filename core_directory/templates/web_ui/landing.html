@@ -48,6 +48,12 @@
                         <div class="stat-label"><i class="bi bi-box"></i> Cores</div>
                     </div>
                 </a>
+                <a href="{% url 'core-publish' %}" class="stat-card-link">
+                    <div class="stat-card">
+                        <div class="stat-value"><b><i class="bi bi-cloud-plus-fill"></i></b></div>
+                        <div class="stat-label">Publish core</div>
+                    </div>
+                </a>
             </div>
         </div>
     </div>
@@ -58,12 +64,24 @@
                 The FuseSoC Package Directory is a searchable index of reusable hardware cores, IP blocks, and SoC components.
                 Browse, search, and integrate open source cores for your FPGA or ASIC projects, powered by <a href="https://fusesoc.github.io/" target="_blank">FuseSoC</a>.
             </p>
+            <div class="links-section mb-4">
+                <a href="https://fusesoc.github.io/" target="_blank"><i class="bi bi-book"></i> Documentation</a>
+                <a href="https://github.com/fusesoc/fusesoc-webserver" target="_blank"><i class="bi bi-github"></i> GitHub</a>
+                <a href="{% url 'core_directory:api_docs_landing' %}" target="_blank"><i class="bi bi-code-slash"></i> API Documentation</a>
+                <a href="{% url 'core-package-list' %}"><i class="bi bi-list"></i> Browse all cores</a>
+            </div>
         </div>
-        <div class="links-section mb-4">
-            <a href="https://fusesoc.github.io/" target="_blank"><i class="bi bi-book"></i> Documentation</a>
-            <a href="https://github.com/fusesoc/fusesoc-webserver" target="_blank"><i class="bi bi-github"></i> GitHub</a>
-            <a href="{% url 'core_directory:api_docs_landing' %}" target="_blank"><i class="bi bi-code-slash"></i> API Documentation</a>
-            <a href="{% url 'core-package-list' %}"><i class="bi bi-list"></i> Browse all cores</a>
+
+        <div class="desc-section">
+            <h2>Interested in publishing your FuseSoC core?</h2>
+            <p>
+                The FuseSoC Package Directory supports several ways to publish your cores:
+            </p>
+                <div class="links-section mb-4">
+                    <a href="https://fusesoc.net/" target="_blank"><i class="bi bi-terminal"></i> FuseSoC-CLI </a>
+                    <a href="{% url 'core_directory:api_docs_landing' %}" target="_blank"><i class="bi bi-code-slash"></i> API </a>
+                    <a href="{% url 'core-publish' %}"><i class="bi bi-window-plus"></i> Web interface </a>
+                <div>
         </div>
     </div>
     <footer class="footer text-center text-muted py-3 small">
