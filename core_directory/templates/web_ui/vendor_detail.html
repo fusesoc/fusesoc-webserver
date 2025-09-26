@@ -1,8 +1,45 @@
 {% extends "web_ui/base.html" %}
 {% load static %}
-{% block title_suffix %}| {{ vendor }}{% endblock %}
+{% block title %}{{ vendor }}{% endblock %}
+{% block meta_description %}Cores and libraries provided by {{ vendor }} on FuseSoC Package Directory.{% endblock %}
+{% block og_title %}Explore cores and libraries from {{ vendor }} on FuseSoC Package Directory{% endblock %}
+{% block og_description %}Cores and libraries provided by {{ vendor }} on FuseSoC Package Directory.{% endblock %}
 {% block extra_head %}
     <script src="{% static 'js/expandable_section.js' %}"></script>
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "{{ vendor|escapejs }}",
+        "url": "{{ request.build_absolute_uri }}"
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+        {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "{{ request.scheme }}://{{ request.get_host }}{% url 'landing' %}"
+        },
+        {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Vendors",
+        "item": "{{ request.scheme }}://{{ request.get_host }}{% url 'vendor-list' %}"
+        },
+        {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "{{ vendor|escapejs }}",
+        "item": "{{ request.build_absolute_uri }}"
+        }
+    ]
+    }
+    </script>
 {% endblock %}
 {% block content %}
     <div class="card shadow-sm mb-4">
