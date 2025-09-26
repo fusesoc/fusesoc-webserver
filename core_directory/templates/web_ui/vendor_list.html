@@ -1,5 +1,47 @@
 {% extends "web_ui/base.html" %}
-{% block title_suffix %}| Vendors{% endblock %}
+{% block title %}Vendors{% endblock %}
+{% block meta_description %}Browse all vendors providing open source hardware cores in the FuseSoC Package Directory.{% endblock %}
+{% block og_title %}Browse all vendors on FuseSoC Package Directory{% endblock %}
+{% block og_description %}Browse all vendors providing open source hardware cores in the FuseSoC Package Directory.{% endblock %}
+{% block extra_head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "name": "Vendors",
+  "url": "{{ request.build_absolute_uri }}",
+  "mainEntity": [
+    {% for vendor in vendors %}
+    {
+      "@type": "Organization",
+      "name": "{{ vendor.name|escapejs }}",
+      "url": "{% url 'vendor-detail' sanitized_name=vendor.sanitized_name %}"
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "{{ request.scheme }}://{{ request.get_host }}{% url 'landing' %}"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Vendors",
+      "item": "{{ request.build_absolute_uri }}"
+    }
+  ]
+}
+</script>
+{% endblock %}
 {% block content %}
     <div class="card shadow-sm">
         {% include "web_ui/includes/card_header.html" with icon="bi bi-list" title="Vendors" %}

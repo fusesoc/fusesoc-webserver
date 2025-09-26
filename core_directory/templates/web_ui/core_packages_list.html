@@ -1,5 +1,48 @@
 {% extends "web_ui/base.html" %}
-{% block title_suffix %}| Cores{% endblock %}
+{% block title %}Cores{% endblock %}
+{% block meta_description %}Browse all core packages in the FuseSoC Package Directory.{% endblock %}
+{% block og_title %}Core Packages on FuseSoC Package Directory{% endblock %}
+{% block og_description %}Browse all core packages in the FuseSoC Package Directory.{% endblock %}
+{% block extra_head %}
+    <script type="application/ld+json">
+    {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": "Core Packages",
+    "url": "{{ request.build_absolute_uri }}",
+    "mainEntity": [
+        {% for package in core_packages %}
+        {
+        "@type": "SoftwareSourceCode",
+        "name": "{{ package.project.name|escapejs }}",
+        "version": "{{ package.version|escapejs }}",
+        "url": "{% url 'core-detail-vlnv' vendor=package.project.vendor.sanitized_name library=package.project.library.sanitized_name|default:"~" core=package.project.sanitized_name version=package.version %}"
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ]
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+        {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "{{ request.scheme }}://{{ request.get_host }}{% url 'landing' %}"
+        },
+        {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Cores",
+        "item": "{{ request.build_absolute_uri }}"
+        }
+    ]
+    }
+    </script>
+{% endblock %}
 {% block content %}
     <div class="card shadow-sm">
         {% include "web_ui/includes/card_header.html" with icon="bi bi-list" title="Core Packages" %}

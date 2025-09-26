@@ -1,8 +1,58 @@
 {% extends "web_ui/base.html" %}
 {% load static %}
-{% block title_suffix %}| {{ core }}{% endblock %}
+{% block title %}{{ core }}{% endblock %}
+{% block meta_description %}{{ core.description|default:core.project.description }}{% endblock %}
+{% block og_title %} View {{ core }} on FuseSoC Package Directory{% endblock %}
+{% block og_description %}{{ core.description|default:core.project.description }}{% endblock %}
 {% block extra_head %}
     <script src="{% static 'js/expandable_section.js' %}"></script>
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareSourceCode",
+        "name": "{{ core.project.name|escapejs }}",
+        "version": "{{ core.version|escapejs }}",
+        "description": "{{ core.description|escapejs }}",
+        "url": "{{ request.build_absolute_uri }}",
+        "license": "{{ core.get_license_url|default:''|escapejs }}",
+        "author": {
+            "@type": "Organization",
+            "name": "{{ core.project.vendor.name|escapejs }}"
+        }   
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+        {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "{{ request.scheme }}://{{ request.get_host }}{% url 'landing' %}"
+        },
+        {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Vendors",
+        "item": "{{ request.scheme }}://{{ request.get_host }}{% url 'vendor-list' %}"
+        },
+        {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "{{ core.project.vendor.name|escapejs }}",
+        "item": "{{ request.scheme }}://{{ request.get_host }}{% url 'vendor-detail' sanitized_name=core.project.vendor.sanitized_name %}"
+        },
+        {
+        "@type": "ListItem",
+        "position": 4,
+        "name": "{{ core.project.name|escapejs }} v{{ core.version|escapejs }}",
+        "item": "{{ request.build_absolute_uri }}"
+        }
+    ]
+    }
+    </script>
 {% endblock %}
 {% block content %}
     <div class="card shadow-sm mb-4">
