@@ -19,8 +19,11 @@ Examples::
         2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
+from django.contrib.sitemaps.views import sitemap
 from django.urls import include, path
 
+from core_directory.sitemaps import CorePackageSitemap, StaticViewSitemap, VendorSitemap
+from core_directory.views.system_views import robots_txt
 from core_directory.views.web_views import (
     landing,
     core_detail,
@@ -30,6 +33,12 @@ from core_directory.views.web_views import (
     vendor_list,
     vendor_detail
 )
+
+sitemaps = {
+    'corepackages': CorePackageSitemap,
+    'static': StaticViewSitemap,
+    'vendors': VendorSitemap,
+}
 
 urlpatterns = [
 
@@ -53,4 +62,7 @@ urlpatterns = [
 
     path('admin/', admin.site.urls),
     path('api/', include('core_directory.urls')),
+
+    path('robots.txt', robots_txt, name='robots_txt'),
+    path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
 ]

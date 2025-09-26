@@ -4,6 +4,7 @@ Models for FuseSoC package database: vendors, libraries, projects, versions, fil
 
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.urls import reverse
 from semver import VersionInfo
 from utils.sanitize import get_unique_sanitized_name
 from utils.spdx import get_spdx_choices, get_spdx_license_url, validate_spdx
@@ -37,6 +38,12 @@ class Vendor(UniqueSanitizedNameMixin):
     def __str__(self):
         """Return the vendors's name as its string representation."""
         return f'{self.name}'
+
+    def get_absolute_url(self):
+        """
+        Returns the canonical URL for this vendor.
+        """
+        return reverse('vendor-detail', kwargs={'sanitized_name': self.sanitized_name})
 
 
 class Library(UniqueSanitizedNameMixin):
@@ -165,6 +172,17 @@ class CorePackage(UniqueSanitizedNameMixin):
         if self.spdx_license:
             return get_spdx_license_url(self.spdx_license)
         return None
+
+    def get_absolute_url(self):
+        """
+        Returns the canonical URL for this core package version.
+        """
+        return reverse('core-detail-vlnv', kwargs={
+            'vendor': self.project.vendor.sanitized_name,
+            'library': self.project.library.sanitized_name or '~',
+            'core': self.project.sanitized_name,
+            'version': self.sanitized_name,
+        })
 
     def clean(self):
         """
