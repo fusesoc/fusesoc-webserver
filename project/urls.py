@@ -19,6 +19,7 @@ Examples::
         2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.conf import settings
+from django.http import HttpResponseNotFound
 from django.contrib import admin
 from django.contrib.sitemaps.views import sitemap
 from django.urls import include, path
@@ -40,6 +41,14 @@ sitemaps = {
     'static': StaticViewSitemap,
     'vendors': VendorSitemap,
 }
+
+def guarded_sitemap_view(request, *args, **kwargs):
+    """
+    Return the sitemap if INDEXABLE is True, else return 404.
+    """
+    if not settings.INDEXABLE:
+        return HttpResponseNotFound("Sitemap is disabled.")
+    return sitemap(request, *args, **kwargs)
 
 urlpatterns = [
 
@@ -64,10 +73,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('core_directory.urls')),
 
-    path('robots.txt', robots_txt, name='robots_txt')
+    path('robots.txt', robots_txt, name='robots_txt'),
+    path('sitemap.xml', guarded_sitemap_view, {'sitemaps': sitemaps}, name='sitemap'),
 ]
-
-if settings.INDEXABLE:
-    urlpatterns += [
-        path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
-    ]

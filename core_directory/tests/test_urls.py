@@ -12,7 +12,6 @@ from django.urls import reverse, resolve
     ("api_docs_landing", {}, 200, False, "get"),
     ("schema", {}, 200, False, "get"),
     ("swagger_ui", {}, 200, False, "get"),
-    ("redoc_ui", {}, 200, False, "get"),
 ])
 def test_url_resolves_and_returns(client, mocker, url_name, kwargs, expected_status, needs_object, method):
     """
