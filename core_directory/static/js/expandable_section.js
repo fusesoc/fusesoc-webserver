@@ -1,18 +1,42 @@
 document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.section-header').forEach(function(header) {
-        header.addEventListener('click', function() {
-            var content = header.nextElementSibling;
-            var btn = header.querySelector('.expand-toggle');
-            // Toggle visibility
-            if (content.style.display === 'none' || content.style.display === '') {
-                content.style.display = 'block';
-                // Optionally animate:
-                content.style.maxHeight = content.scrollHeight + "px";
-                btn.innerHTML = '<i class="bi bi-dash"></i>';
-            } else {
-                content.style.display = 'none';
-                btn.innerHTML = '<i class="bi bi-plus"></i>';
+    document.querySelectorAll('.section-card.collapsible').forEach(function(card) {
+        var header = card.querySelector('.section-header');
+        var content = card.querySelector('.section-content');
+        var toggle = header.querySelector('.expand-toggle');
+        var collapsed = card.getAttribute('data-collapsed') === 'true';
+
+        // Set initial state
+        if (collapsed) {
+            content.style.display = 'none';
+            if (toggle) toggle.innerHTML = '<i class="bi bi-plus"></i>';
+        } else {
+            content.style.display = 'block';
+            if (toggle) toggle.innerHTML = '<i class="bi bi-dash"></i>';
+        }
+
+        // Toggle function
+        function doToggle() {
+            var isOpen = content.style.display === 'block';
+            content.style.display = isOpen ? 'none' : 'block';
+            if (toggle) {
+                toggle.innerHTML = isOpen
+                    ? '<i class="bi bi-plus"></i>'
+                    : '<i class="bi bi-dash"></i>';
             }
+        }
+
+        // Click handler on header (but ignore if button was clicked)
+        header.addEventListener('click', function(e) {
+            if (e.target.closest('.expand-toggle')) return; // Don't toggle twice if button clicked
+            doToggle();
         });
+
+        // Click handler on button (for keyboard accessibility)
+        if (toggle) {
+            toggle.addEventListener('click', function(e) {
+                e.stopPropagation(); // Prevent header handler from firing
+                doToggle();
+            });
+        }
     });
 });

@@ -58,128 +58,139 @@
     <div class="card shadow-sm mb-4">
         {% include "web_ui/includes/card_header.html" with icon="bi bi-box" title=core %}
         <div class="card-body">
-            <div class="mb-3">
-                <strong>
-                    Vendor:
-                    <a href="{% url 'vendor-detail' sanitized_name=core.project.vendor.sanitized_name %}" class="section-link">
-                        {{ core.project.vendor }}
-                    </a>
-                </strong>
-            </div>
-            <div class="mb-3">
-                <strong>Description:</strong>
-                <div class="text-muted">{{ core.description }}</div>
-            </div>
-            <div class="mb-3">
-                {% if core.spdx_license %}
-                    {% if core.get_license_url %}
-                        <a href="{{ core.get_license_url }}" class="badge bg-success" target="_blank">
-                        <i class="bi bi-file-earmark-medical" aria-hidden="true"></i>
-                        License: {{ core.spdx_license }}
-                        </a>
-                    {% else %}
-                        <span class="badge bg-warning" title="Custom or unknown license">
-                        <i class="bi bi-file-earmark-text" aria-hidden="true"></i>
-                        License: {{ core.spdx_license }}
-                        </span>
-                    {% endif %}
-                    {% else %}
-                    <span class="badge bg-secondary" title="No license specified">
-                        <i class="bi bi-file-earmark-x" aria-hidden="true"></i>
-                        License unknown
-                    </span>
-                    {% endif %}
-                {% if core.is_signed %}
-                    <span class="badge bg-success">
-                    <i class="bi bi-shield-check"></i>
-                        signed
-                    </span>
-                {% else %}
-                    <span class="badge bg-danger">
-                    <i class="bi bi-shield-exclamation"></i>
-                        unsigned
-                    </span>
-                {% endif %}
-            </div>
-            <h5 class="mt-4 mb-3"><i class="bi bi-files"></i> Files</h5>
-                <a href="{{ core.core_url }}" class="btn btn-outline-primary btn-sm me-1" title="Download .core file">
-                <i class="bi bi-file-earmark-code"></i> .core
-            </a>
-            {% if core.is_signed %}
-                <a href="{{ core.sig_url }}" class="btn btn-outline-secondary btn-sm" title="Download .sig file">
-                    <i class="bi bi-file-earmark-medical"></i> .sig
-                </a>
-            {% endif %}
-            <h5 class="mt-4 mb-3"><i class="bi bi-motherboard"></i> Targets</h5>
-            {% for item in targets_with_deps %}
-                {% with target_configuration=item.target_configuration dependencies=item.dependencies %}
-                <div class="section-card mb-3 border rounded">
-                    <div class="section-header p-2 bg-light d-flex align-items-center" style="cursor:pointer;">
-                        <span class="expand-btn me-2" aria-label="Expand/collapse target" tabindex="0">
-                            <i class="bi bi-plus"></i>
-                        </span>
-                        <strong>{{ target_configuration.target }}</strong>
+            <div class="section-card mb-3 border rounded">
+                <div class="section-header"><i class="bi bi-files me-2"></i> Details</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>
+                            Vendor:
+                            <a href="{% url 'vendor-detail' sanitized_name=core.project.vendor.sanitized_name %}" class="section-link">
+                                {{ core.project.vendor }}
+                            </a>
+                        </strong>
                     </div>
-                    <div class="section-content p-3" style="display:none;">
-                        <table class="table table-sm mb-0">
-                            <colgroup>
-                                <col style="width:20%;">
-                                <col style="width:80%;">
-                            </colgroup>
-                            {% if target_configuration.description %}
-                            <tr>
-                                <td class="fw-bold text-nowrap">Description:</td>
-                                <td>{{ target_configuration.description }}</td>
-                            </tr>
+                    <div class="mb-3">
+                        <strong>Description:</strong>
+                        <div class="text-muted">{{ core.description }}</div>
+                    </div>
+                    <div class="mb-3">
+                        {% if core.spdx_license %}
+                            {% if core.get_license_url %}
+                                <a href="{{ core.get_license_url }}" class="badge bg-success" target="_blank">
+                                <i class="bi bi-file-earmark-medical" aria-hidden="true"></i>
+                                License: {{ core.spdx_license }}
+                                </a>
+                            {% else %}
+                                <span class="badge bg-warning" title="Custom or unknown license">
+                                <i class="bi bi-file-earmark-text" aria-hidden="true"></i>
+                                License: {{ core.spdx_license }}
+                                </span>
                             {% endif %}
-                            {% if target_configuration.flow %}
-                            <tr>
-                                <td class="fw-bold text-nowrap">Flow:</td>
-                                <td>{{ target_configuration.flow }}</td>
-                            </tr>
-                            {% elif target_configuration.default_tool %}
-                            <tr>
-                                <td class="fw-bold text-nowrap">Default tool:</td>
-                                <td>{{ target_configuration.default_tool }}</td>
-                            </tr>
+                            {% else %}
+                            <span class="badge bg-secondary" title="No license specified">
+                                <i class="bi bi-file-earmark-x" aria-hidden="true"></i>
+                                License unknown
+                            </span>
                             {% endif %}
-                            {% if target_configuration.parameters %}
-                            <tr>
-                                <td class="fw-bold text-nowrap">Parameters:</td>
-                                <td>
-                                    {% for parameter in target_configuration.parameters %}
-                                        <span class="badge badge-secondary me-1">{{ parameter }}</span>
-                                    {% endfor %}
-                                </td>
-                            </tr>
-                            {% endif %}
-                            {% if item.filetypes %}
-                            <tr>
-                                <td class="fw-bold text-nowrap">Filetypes:</td>
-                                <td>
-                                    {% for filetype in item.filetypes %}
-                                        <span class="badge bg-light text-dark border me-1">{{ filetype }}</span>
-                                    {% endfor %}
-                                </td>
-                            </tr>
-                            {% endif %}
-                            <tr>
-                                <td class="fw-bold text-nowrap">Dependencies:</td>
-                                <td>
-                                    {% if dependencies %}
-                                        {% for dependency in dependencies %}
-                                            <a href="{% url 'core-package-list' %}?search={{ dependency }}" class="badge bg-light me-1 text-dark">{{ dependency }}</a>
-                                        {% endfor %}
-                                    {% else %}
-                                        <span class="text-muted">None</span>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                        </table>
+                        {% if core.is_signed %}
+                            <span class="badge bg-success">
+                            <i class="bi bi-shield-check"></i>
+                                signed
+                            </span>
+                        {% else %}
+                            <span class="badge bg-danger">
+                            <i class="bi bi-shield-exclamation"></i>
+                                unsigned
+                            </span>
+                        {% endif %}
                     </div>
                 </div>
-                {% endwith %}
-            {% endfor %}
+            </div>
+            <div class="section-card mb-3 border rounded">
+                <div class="section-header"><i class="bi bi-files me-2"></i> Files</div>
+                <div class="section-content p-3" style="display:block">
+                    <a href="{{ core.core_url }}" class="btn btn-outline-primary btn-sm me-1" title="Download .core file">
+                        <i class="bi bi-file-earmark-code"></i> .core
+                    </a>
+                    {% if core.is_signed %}
+                    <a href="{{ core.sig_url }}" class="btn btn-outline-secondary btn-sm" title="Download .sig file">
+                        <i class="bi bi-file-earmark-medical"></i> .sig
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="section-card mb-3 border rounded collapsible">
+                <div class="section-header"><i class="bi bi-motherboard me-2"></i> Targets</div>
+                <div class="section-content p-3" style="display:block">
+                {% for item in targets_with_deps %}
+                    {% with target_configuration=item.target_configuration dependencies=item.dependencies %}
+                    <div class="section-card mb-3 border rounded collapsible" data-collapsed="true">
+                        <div class="section-header p-2 bg-light d-flex align-items-center">
+                            <button type="button" class="expand-toggle btn btn-link p-0 me-2" aria-label="Expand/collapse library"></button>
+                            <b>{{ target_configuration.target }}</b>
+                        </div>
+                        <div class="section-content p-3" style="display:none;">
+                            <table class="table table-sm mb-0">
+                                <colgroup>
+                                    <col style="width:20%;">
+                                    <col style="width:80%;">
+                                </colgroup>
+                                {% if target_configuration.description %}
+                                <tr>
+                                    <td class="fw-bold text-nowrap">Description:</td>
+                                    <td>{{ target_configuration.description }}</td>
+                                </tr>
+                                {% endif %}
+                                {% if target_configuration.flow %}
+                                <tr>
+                                    <td class="fw-bold text-nowrap">Flow:</td>
+                                    <td>{{ target_configuration.flow }}</td>
+                                </tr>
+                                {% elif target_configuration.default_tool %}
+                                <tr>
+                                    <td class="fw-bold text-nowrap">Default tool:</td>
+                                    <td>{{ target_configuration.default_tool }}</td>
+                                </tr>
+                                {% endif %}
+                                {% if target_configuration.parameters %}
+                                <tr>
+                                    <td class="fw-bold text-nowrap">Parameters:</td>
+                                    <td>
+                                        {% for parameter in target_configuration.parameters %}
+                                            <span class="badge badge-secondary me-1">{{ parameter }}</span>
+                                        {% endfor %}
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% if item.filetypes %}
+                                <tr>
+                                    <td class="fw-bold text-nowrap">Filetypes:</td>
+                                    <td>
+                                        {% for filetype in item.filetypes %}
+                                            <span class="badge bg-light text-dark border me-1">{{ filetype }}</span>
+                                        {% endfor %}
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                <tr>
+                                    <td class="fw-bold text-nowrap">Dependencies:</td>
+                                    <td>
+                                        {% if dependencies %}
+                                            {% for dependency in dependencies %}
+                                                <a href="{% url 'core-package-list' %}?search={{ dependency }}" class="badge bg-light me-1 text-dark">{{ dependency }}</a>
+                                            {% endfor %}
+                                        {% else %}
+                                            <span class="text-muted">None</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    {% endwith %}
+                {% endfor %}
+                </div>
+            </div>
         </div>
     </div>
 {% endblock %}
