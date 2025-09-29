@@ -38,11 +38,14 @@
                             <li>Select the core you like to publish, validate it, and then publish.</li>
                         </ol>
                         <p>
-                            Make sure the repository you specify actually contains the core and its source files - not just a core description file that points to another provider.
-                            Cores with a <code>provider</code> section referencing a different repository cannot be published here; use the <a href="{% url 'core_directory:api_docs_landing' %}" target="_blank">API</a> for those cases.
+                            Make sure the repository you specify actually contains the local core with its source files - not just a core description file that points to another provider.
+                            External cores already containing a <code>provider</code> section cannot be published here; use the <a href="{% url 'core_directory:api_docs_landing' %}" target="_blank">API</a> in those cases.
                         </p>
                         <p>
-                            <strong>Note:</strong> When publishing, a <code>provider</code> section will automatically be added to the core, referencing the selected GitHub commit by its SHA.
+                            <strong>Note:</strong> When publishing using this web interface, the core will automatically be converted into an remote core. A <code>provider</code> section will be added to the core, referencing the selected GitHub commit by its SHA.
+                        </p>
+                        <p>
+                            <strong>Core signing is not supported:</strong> This web interface does not currently support signing of published cores or publishing of existing signatures.
                         </p>
                     </div>
                 </div>

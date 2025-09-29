@@ -90,19 +90,12 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="dropdown flex-grow-1">
                                 <button class="btn btn-outline-primary dropdown-toggle w-100 d-flex justify-content-between align-items-center" type="button" id="coreDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                                     <span id="coreDropdownLabel" class="text-truncate">${defaultCore}</span>
-                                    <span class="d-flex align-items-center">
-                                        ${defaultHasSig ? '<span id="coreDropdownBadge" class="badge bg-success ms-2"><i class="bi bi-shield-check"></i> signed</span>' : '<span id="coreDropdownBadge"></span>'}
-                                    </span>
                                 </button>
                                 <ul class="dropdown-menu w-100" aria-labelledby="coreDropdown">
                                     ${obj.core_files.map(f => `
                                         <li>
-                                            <a class="dropdown-item core-dropdown-item d-flex align-items-center justify-content-between" href="#" data-core="${f.core}" data-has-sig="${f.hasSig}">
+                                            <a class="dropdown-item core-dropdown-item d-flex align-items-center justify-content-between" href="#" data-core="${f.core}">
                                                 <span>${f.core}</span>
-                                                ${f.hasSig
-                                                    ? '<span class="badge bg-success ms-2"><i class="bi bi-shield-check"></i> signed</span>'
-                                                    : '<span class="badge bg-danger py-1 ms-2"><i class="bi bi-shield-exclamation"></i> unsigned</span>'
-                                                }
                                             </a>
                                         </li>
                                     `).join('')}
@@ -135,17 +128,7 @@ document.addEventListener('DOMContentLoaded', function() {
             item.addEventListener('click', function(e) {
                 e.preventDefault();
                 selectedCore = this.getAttribute('data-core');
-                selectedHasSig = this.getAttribute('data-has-sig') === 'true';
                 document.getElementById('coreDropdownLabel').textContent = selectedCore;
-                // Update badge
-                const badgeElem = document.getElementById('coreDropdownBadge');
-                if (selectedHasSig) {
-                    badgeElem.className = 'badge bg-success ms-2';
-                    badgeElem.innerHTML = '<i class="bi bi-shield-check"></i> signed';
-                } else {
-                    badgeElem.className = '';
-                    badgeElem.innerHTML = '';
-                }
                 // Clear validation result and disable publish when selection changes
                 document.getElementById('validate-result').innerHTML = '';
                 const publishBtn = document.getElementById('publish-core-btn');
@@ -290,7 +273,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     /**
-     * Lists all .core files in the repo root at the given SHA, and checks for signature files.
+     * Lists all .core files in the repo root at the given SHA.
      * @param {string} owner
      * @param {string} repo
      * @param {string} sha
@@ -310,10 +293,8 @@ document.addEventListener('DOMContentLoaded', function() {
             // Only root .core files
             const coreFiles = allFiles.filter(path => path.endsWith('.core') && !path.includes('/'));
             const fileSet = new Set(allFiles);
-            // Map to objects with signature info
             return coreFiles.map(corePath => ({
-                core: corePath,
-                hasSig: fileSet.has(corePath + '.sig')
+                core: corePath
             }));
         } catch (err) {
             showResult({ error: 'Error listing .core files.' });
@@ -337,9 +318,8 @@ document.addEventListener('DOMContentLoaded', function() {
         validateResultDiv.innerHTML = 'Validating...';
 
         const rawUrl = `https://raw.githubusercontent.com/${obj.repo.name}/${obj.commit}/${coreFilePath}`;
-        const sigUrl = rawUrl + '.sig';
 
-        let text, sigBlob = null;
+        let text = null;
         try {
             // Fetch core file
             const response = await fetch(rawUrl);
@@ -348,14 +328,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             text = await response.text();
-
-            // Try to fetch signature file (optional)
-            const sigResponse = await fetch(sigUrl);
-            if (sigResponse.ok) {
-                sigBlob = await sigResponse.blob();
-            }
         } catch (err) {
-            validateResultDiv.innerHTML = '<div class="alert alert-danger">Error fetching core or signature file.</div>';
+            validateResultDiv.innerHTML = '<div class="alert alert-danger">Error fetching core file.</div>';
             return;
         }
 
@@ -391,9 +365,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const formData = new FormData();
         formData.append('core_file', blob, coreFilePath);
-        if (sigBlob) {
-            formData.append('signature_file', sigBlob, coreFilePath + '.sig');
-        }
 
         let validateResponse, respText, result;
         try {
@@ -414,7 +385,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         if (validateResponse.ok) {
-            lastValidatedCore = { blob, filename: coreFilePath, sigBlob };
+            lastValidatedCore = { blob, filename: coreFilePath };
             validateResultDiv.innerHTML =
                 `<div class="alert alert-success">
                     Validation successful!<br>
@@ -446,9 +417,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const formData = new FormData();
         formData.append('core_file', lastValidatedCore.blob, lastValidatedCore.filename);
-        if (lastValidatedCore.sigBlob) {
-            formData.append('signature_file', lastValidatedCore.sigBlob, lastValidatedCore.filename + '.sig');
-        }
 
         try {
             const publishResponse = await fetch('/api/v1/publish/', {
