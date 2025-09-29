@@ -1,0 +1,87 @@
+{% extends "web_ui/base.html" %}
+{% load static %}
+{% block title_suffix %}| Publish core{% endblock %}
+{% block extra_head %}
+    <script src="{% static 'js/expandable_section.js' %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
+    <style>
+        label { display: block; margin-top: 1em; }
+        .hidden { display: none; }
+        #result { margin-top: 2em; }
+    </style>
+{% endblock %}
+{% block content %}
+    <!-- Hidden card header template for JS use -->
+    <div id="card-header-template" style="display:none;">
+        {% include "web_ui/includes/card_header.html" with icon="bi __ICON__" title="__TITLE__" %}
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        {% include "web_ui/includes/card_header.html" with icon="bi bi-cloud-plus" title="Publish new core" %}
+        <div class="card-body">
+                <div class="section-card mb-3 border rounded">
+                    <div class="section-header p-2 bg-light d-flex align-items-center" style="cursor:pointer;">
+                        <span class="expand-toggle me-2" aria-label="Expand/collapse library" tabindex="0">
+                            <i class="bi bi-plus"></i>
+                        </span>
+                        <strong>How to publish a FuseSoC Core</strong>
+                    </div>
+                    <div class="section-content p-3" style="display:none;">
+                        <p>
+                            Use this page to publish a FuseSoC core directly from a GitHub repository.<br>
+                            You can select the latest commit, a specific tag, or enter a commit hash to target a particular version.
+                            Only <code>.core</code> files located in the root of the repository are supported.
+                        </p>
+                        <ol>
+                            <li>Enter a GitHub repo URL and select a version (latest, tag, or commit).</li>
+                            <li>Parse to list available <code>.core</code> files.</li>
+                            <li>Select the core you like to publish, validate it, and then publish.</li>
+                        </ol>
+                        <p>
+                            Make sure the repository you specify actually contains the local core with its source files - not just a core description file that points to another provider.
+                            External cores already containing a <code>provider</code> section cannot be published here; use the <a href="{% url 'core_directory:api_docs_landing' %}" target="_blank">API</a> in those cases.
+                        </p>
+                        <p>
+                            <strong>Note:</strong> When publishing using this web interface, the core will automatically be converted into an remote core. A <code>provider</code> section will be added to the core, referencing the selected GitHub commit by its SHA.
+                        </p>
+                        <p>
+                            <strong>Core signing is not supported:</strong> This web interface does not currently support signing of published cores or publishing of existing signatures.
+                        </p>
+                    </div>
+                </div>
+            <div class="card shadow-sm mb-3">           
+                {% include "web_ui/includes/card_header.html" with icon="bi bi-shop" title="Select GitHub repository" %}
+                <div class="p-3">
+                    <form id="repo-form" autocomplete="off" class="row g-2 align-items-center">
+                        <div class="col-auto">
+                            <label for="repo_url" class="visually-hidden">GitHub Repository URL</label>
+                            <input type="url" id="repo_url" name="repo_url" class="form-control" style="min-width:350px; width:400px;" required placeholder="https://github.com/owner/repo">
+                        </div>
+                        <div class="col-auto">
+                            <label for="version_type" class="visually-hidden">Version Type</label>
+                            <select id="version_type" name="version_type" class="form-select" required>
+                                <option value="latest">Latest</option>
+                                <option value="tag">Tag</option>
+                                <option value="commit">Commit</option>
+                            </select>
+                        </div>
+                        <div class="col-auto" id="tag-field" style="display:none;">
+                            <label for="tag" class="visually-hidden">Tag</label>
+                            <select id="tag" name="tag" class="form-select"></select>
+                        </div>
+                        <div class="col-auto" id="commit-field" style="display:none;">
+                            <label for="commit" class="visually-hidden">Commit Hash</label>
+                            <input type="text" id="commit" name="commit" class="form-control" placeholder="e.g. 1a2b3c4d">
+                        </div>
+                        <div class="col-auto">
+                            <button type="submit" class="btn btn-primary">Parse</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div id="result"></div>
+        </div>
+    </div>
+    
+    <script src="{% static 'js/publish_core_from_github.js' %}"></script>
+{% endblock %}
