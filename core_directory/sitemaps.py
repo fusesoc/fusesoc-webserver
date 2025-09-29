@@ -3,13 +3,15 @@ This module defines sitemap classes for the Django application.
 Classes:
     ProjectSitemap: Generates sitemap entries for all Project objects.
     CorePackageSitemap: Generates sitemap entries for all CorePackage objects.
-    StaticViewSitemap: Generates sitemap entries for static views such as 'landing', 'core-package-list', and 'vendor-list'.
-Each sitemap class specifies the change frequency and priority for its entries, and provides methods to retrieve the items to be included in the sitemap.
+    StaticViewSitemap: Generates sitemap entries for static views such as 'landing',
+    'core-package-list', and 'vendor-list'.
+Each sitemap class specifies the change frequency and priority for its entries,
+and provides methods to retrieve the items to be included in the sitemap.
 """
 
 from django.contrib.sitemaps import Sitemap
-from .models import CorePackage, Vendor
 from django.urls import reverse
+from .models import CorePackage, Vendor
 
 class VendorSitemap(Sitemap):
     """
@@ -24,7 +26,7 @@ class VendorSitemap(Sitemap):
     priority = 0.6
 
     def items(self):
-        return Vendor.objects.all()
+        return Vendor.objects.all().order_by('sanitized_name', 'pk')
 
 class CorePackageSitemap(Sitemap):
     """
@@ -44,7 +46,7 @@ class CorePackageSitemap(Sitemap):
     changefreq = "daily"
     priority = 0.8
     def items(self):
-        return CorePackage.objects.all()
+        return CorePackage.objects.all().order_by('vlnv_name')
 
 class StaticViewSitemap(Sitemap):
     """

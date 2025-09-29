@@ -1,6 +1,9 @@
 import pytest
 from django.urls import reverse, resolve
+from django.test import override_settings
 
+@pytest.mark.django_db
+@override_settings(INDEXABLE=False)
 @pytest.mark.parametrize("url_name, kwargs, expected_status", [
     ("landing", {}, 200),
     ("core-detail", {"pk": 1}, 200),
@@ -13,6 +16,8 @@ from django.urls import reverse, resolve
     }, 200),
     ("vendor-list", {}, 200),
     ("vendor-detail", {"sanitized_name": "acme"}, 200),
+    ("robots_txt", {}, 200),
+    ("sitemap", {}, 200),
 ])
 def test_project_urls(client, url_name, kwargs, expected_status):
     """
