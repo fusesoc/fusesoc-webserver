@@ -19,39 +19,46 @@
     <div class="card shadow-sm mb-4">
         {% include "web_ui/includes/card_header.html" with icon="bi bi-cloud-plus" title="Publish new core" %}
         <div class="card-body">
-                <div class="section-card mb-3 border rounded">
-                    <div class="section-header p-2 bg-light d-flex align-items-center" style="cursor:pointer;">
-                        <span class="expand-toggle me-2" aria-label="Expand/collapse library" tabindex="0">
-                            <i class="bi bi-plus"></i>
-                        </span>
-                        <strong>How to publish a FuseSoC Core</strong>
-                    </div>
-                    <div class="section-content p-3" style="display:none;">
-                        <p>
-                            Use this page to publish a FuseSoC core directly from a GitHub repository.<br>
-                            You can select the latest commit, a specific tag, or enter a commit hash to target a particular version.
-                            Only <code>.core</code> files located in the root of the repository are supported.
-                        </p>
-                        <ol>
-                            <li>Enter a GitHub repo URL and select a version (latest, tag, or commit).</li>
-                            <li>Parse to list available <code>.core</code> files.</li>
-                            <li>Select the core you like to publish, validate it, and then publish.</li>
-                        </ol>
-                        <p>
-                            Make sure the repository you specify actually contains the local core with its source files - not just a core description file that points to another provider.
-                            External cores already containing a <code>provider</code> section cannot be published here; use the <a href="{% url 'core_directory:api_docs_landing' %}" target="_blank">API</a> in those cases.
-                        </p>
-                        <p>
-                            <strong>Note:</strong> When publishing using this web interface, the core will automatically be converted into an remote core. A <code>provider</code> section will be added to the core, referencing the selected GitHub commit by its SHA.
-                        </p>
-                        <p>
-                            <strong>Core signing is not supported:</strong> This web interface does not currently support signing of published cores or publishing of existing signatures.
-                        </p>
-                    </div>
+
+            <!-- Instructions (collapsible) -->
+            <div class="section-card collapsible" data-collapsed="true">
+                <div class="section-header">
+                    <button type="button" class="expand-toggle btn btn-link p-0 me-2" aria-label="Expand/collapse library">
+                        <i class="bi bi-plus"></i>
+                    </button>
+                    <h2 class="h5">How to publish a FuseSoC Core</h2>
                 </div>
-            <div class="card shadow-sm mb-3">           
-                {% include "web_ui/includes/card_header.html" with icon="bi bi-shop" title="Select GitHub repository" %}
-                <div class="p-3">
+                <div class="section-content">
+                    <p>
+                        Use this page to publish a FuseSoC core directly from a GitHub repository.<br>
+                        You can select the latest commit, a specific tag, or enter a commit hash to target a particular version.
+                        Only <code>.core</code> files located in the root of the repository are supported.
+                    </p>
+                    <ol>
+                        <li>Enter a GitHub repo URL and select a version (latest, tag, or commit).</li>
+                        <li>Parse to list available <code>.core</code> files.</li>
+                        <li>Select the core you like to publish, validate it, and then publish.</li>
+                    </ol>
+                    <p>
+                        Make sure the repository you specify actually contains the local core with its source files - not just a core description file that points to another provider.
+                        External cores already containing a <code>provider</code> section cannot be published here; use the <a href="{% url 'core_directory:api_docs_landing' %}" target="_blank">API</a> in those cases.
+                    </p>
+                    <p>
+                        <strong>Note:</strong> When publishing using this web interface, the core will automatically be converted into a remote core. A <code>provider</code> section will be added to the core, referencing the selected GitHub commit by its SHA.
+                    </p>
+                    <p>
+                        <strong>Core signing is not supported:</strong> This web interface does not currently support signing of published cores or publishing of existing signatures.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Repository selection form -->
+            <div class="section-card">
+                <h2 class="section-header">
+                    <i class="bi bi-shop me-2"></i>
+                    Select GitHub repository
+                </h2>
+                <div class="section-content" style="display:block;">
                     <form id="repo-form" autocomplete="off" class="row g-2 align-items-center">
                         <div class="col-auto">
                             <label for="repo_url" class="visually-hidden">GitHub Repository URL</label>
@@ -79,9 +86,12 @@
                     </form>
                 </div>
             </div>
+
+            <!-- Results and core selection (rendered by JS) -->
             <div id="result"></div>
+
         </div>
     </div>
-    
+
     <script src="{% static 'js/publish_core_from_github.js' %}"></script>
 {% endblock %}

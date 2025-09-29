@@ -61,60 +61,66 @@ document.addEventListener('DOMContentLoaded', function() {
         let html = '';
         if (obj.repo) {
             html += `
-            <div class="card mb-3">
-            ${getCardHeaderHtml("bi-github", "Repository details")}
-            <div class="card-body">
-                <h5 class="card-title">
-                <a href="${obj.repo.url}" target="_blank"><strong>${obj.repo.name}</strong></a>
-                <span class="fs-6">@${obj.parsed_version}</span>
-                </h5>
-                <p class="card-text">${obj.repo.description || ''}</p>
-                <p class="card-text">
-                <span class="me-3">⭐ ${obj.repo.stars}</span>
-                <span>🍴 ${obj.repo.forks}</span>
-                </p>
-            </div>
+            <div class="section-card mb-3">
+                <div class="section-header">
+                    <i class="bi bi-github me-2"></i>
+                    <strong>Repository details</strong>
+                </div>
+                <div class="section-content" style="display:block;">
+                    <h3 class="h5">
+                        <a href="${obj.repo.url}" target="_blank">${obj.repo.name}</a>
+                        <span class="fs-6">@${obj.parsed_version}</span>
+                    </h3>
+                    <p>${obj.repo.description || ''}</p>
+                    <p>
+                        <span class="me-3">⭐ ${obj.repo.stars}</span>
+                        <span>🍴 ${obj.repo.forks}</span>
+                    </p>
+                </div>
             </div>
             `;
         }
         if (obj.core_files) {
             html += `
-                <div class="card mb-3">
-                ${getCardHeaderHtml("bi-boxes", "Select core")}
-                <div class="p-3">`;
-                if (obj.core_files.length > 0) {
-                    const defaultCore = obj.core_files[0].core;
-                    const defaultHasSig = obj.core_files[0].hasSig;
-                    html += `
-                        <div class="d-flex w-100 align-items-stretch gap-2 mb-3">
-                            <div class="dropdown flex-grow-1">
-                                <button class="btn btn-outline-primary dropdown-toggle w-100 d-flex justify-content-between align-items-center" type="button" id="coreDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <span id="coreDropdownLabel" class="text-truncate">${defaultCore}</span>
-                                </button>
-                                <ul class="dropdown-menu w-100" aria-labelledby="coreDropdown">
-                                    ${obj.core_files.map(f => `
-                                        <li>
-                                            <a class="dropdown-item core-dropdown-item d-flex align-items-center justify-content-between" href="#" data-core="${f.core}">
-                                                <span>${f.core}</span>
-                                            </a>
-                                        </li>
-                                    `).join('')}
-                                </ul>
-                            </div>
-                            <button id="validate-core-btn" type="button" class="btn btn-primary">Validate</button>
-                            <button id="publish-core-btn" type="button" class="btn btn-secondary" disabled>Publish</button>
+                <div class="section-card mb-3">
+                    <div class="section-header">
+                        <i class="bi bi-boxes me-2"></i>
+                        <strong>Select core</strong>
+                    </div>
+                    <div class="section-content" style="display:block;">`;
+            if (obj.core_files.length > 0) {
+                const defaultCore = obj.core_files[0].core;
+                const defaultHasSig = obj.core_files[0].hasSig;
+                html += `
+                    <div class="d-flex w-100 align-items-stretch gap-2 mb-3">
+                        <div class="dropdown flex-grow-1">
+                            <button class="btn btn-outline-primary dropdown-toggle w-100 d-flex justify-content-between align-items-center" type="button" id="coreDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <span id="coreDropdownLabel" class="text-truncate">${defaultCore}</span>
+                            </button>
+                            <ul class="dropdown-menu w-100" aria-labelledby="coreDropdown">
+                                ${obj.core_files.map(f => `
+                                    <li>
+                                        <a class="dropdown-item core-dropdown-item d-flex align-items-center justify-content-between" href="#" data-core="${f.core}">
+                                            <span>${f.core}</span>
+                                        </a>
+                                    </li>
+                                `).join('')}
+                            </ul>
                         </div>
-                        <div id="validate-result" style="margin-top:1em;"></div>
-                    `;
-                } else {
-                    html +=                    
-                        `<div class="alert alert-warning">
-                            <strong>No <code>.core</code> files found in the repository.</strong><br>
-                            <span class="text-muted">
-                                Note: Only <code>.core</code> files located in the root of the repository can be published.
-                            </span>
-                        </div>`;  
-                }
+                        <button id="validate-core-btn" type="button" class="btn btn-primary">Validate</button>
+                        <button id="publish-core-btn" type="button" class="btn btn-secondary" disabled>Publish</button>
+                    </div>
+                    <div id="validate-result" style="margin-top:1em;"></div>
+                `;
+            } else {
+                html +=                    
+                    `<div class="alert alert-warning">
+                        <strong>No <code>.core</code> files found in the repository.</strong><br>
+                        <span class="text-muted">
+                            Note: Only <code>.core</code> files located in the root of the repository can be published.
+                        </span>
+                    </div>`;  
+            }
             html += `</div></div>`;
         }
         resultDiv.innerHTML = html;
