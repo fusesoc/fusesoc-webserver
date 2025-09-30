@@ -144,6 +144,19 @@ class CorePackage(UniqueSanitizedNameMixin):
         """
         return bool(self.sig_url)
 
+    @property
+    def sanitized_vlnv(self):
+        """
+        Returns a filesystem- and URL-safe version of the core's VLNV (Vendor:Library:Name:Version),
+        with colons and other problematic characters replaced by underscores.
+        """
+        return (
+            f'{self.project.vendor.sanitized_name}_'
+            f'{self.project.library.sanitized_name}_'
+            f'{self.project.sanitized_name}_'
+            f'{self.sanitized_name}'
+        )
+
     class Meta:
         """Ensure version is unique per project."""
         unique_together = ('project', 'version')

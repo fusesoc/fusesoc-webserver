@@ -41,7 +41,7 @@ urlpatterns = [
         path('', RedirectView.as_view(url='docs/', permanent=True), name='redirect_to_docs'),
         path('health/', HealthCheckView.as_view(), name='health_check'),
         path('list/', Cores.as_view(), name='core_list'),
-        path('<str:package_name>/get/', GetCore.as_view(), name='core_get'),
+        path('get/', GetCore.as_view(), name='core_get'),
         path('validate/', Validate.as_view(), name='validate'),
         path('publish/', Publish.as_view(), name='publish'),
 

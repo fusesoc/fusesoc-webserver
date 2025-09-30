@@ -1,6 +1,11 @@
 import pytest
+
+from io import BytesIO
+
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
+
+from core_directory.models import Vendor, Library, Project, CorePackage
 
 @pytest.mark.django_db
 def test_publish_success(client, mocker):
@@ -28,11 +33,44 @@ def test_publish_success(client, mocker):
     mocker.patch("os.getenv", side_effect=lambda key, default=None: "dummy_token" if key == "GITHUB_ACCESS_TOKEN" else default)
 
     response = client.post(url, data={"core_file": SimpleUploadedFile("test.core", b"dummy")})
-    assert response.status_code in (200, 201)
+    assert response.status_code is 201
     assert b"published" in response.content or b"valid" in response.content
 
 @pytest.mark.django_db
-def test_publish_already_exists(client, mocker):
+def test_publish_core_already_exists_in_db(client, mocker):
+    # Set up test data: create a core with the same VLNV in the database
+    vendor = Vendor.objects.create(name="Acme")
+    library = Library.objects.create(vendor=vendor, name="Lib1")
+    project = Project.objects.create(vendor=vendor, library=library, name="foo", description="desc")
+    CorePackage.objects.create(
+        project=project,
+        vlnv_name="acme:lib1:foo:1.0.0",
+        version="1.0.0",
+        version_major=1,
+        version_minor=0,
+        version_patch=0,
+        core_url="https://example.com/foo.core",
+        description="desc"
+    )
+    
+    url = reverse('core_directory:publish')
+    # Mock serializer
+    mock_serializer = mocker.patch("core_directory.views.api_views.CoreSerializer")
+    instance = mock_serializer.return_value
+    instance.is_valid.return_value = True
+    instance.validated_data = {
+        "vlnv_name": "acme:lib1:foo:1.0.0",
+        "core_file": SimpleUploadedFile("test.core", b"dummy"),
+        "sanitized_name": "core",
+        "signature_file": None,
+    }
+
+    response = client.post(url, data={"core_file": SimpleUploadedFile("test.core", b"dummy")})
+    assert response.status_code == 409
+    assert b"already exists" in response.content
+    
+@pytest.mark.django_db
+def test_publish_already_exists_on_github(client, mocker):
     url = reverse('core_directory:publish')
     mock_serializer = mocker.patch("core_directory.views.api_views.CoreSerializer")
     instance = mock_serializer.return_value

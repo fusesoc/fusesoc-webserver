@@ -88,9 +88,13 @@ All endpoints are under `/api/v1/`:
 |----------------------------|--------|------------------------------------------|
 | `/health/`                 | GET    | API health check                         |
 | `/list/?filter=...`        | GET    | List available core packages             |
-| `/<package_name>/get/`     | GET    | Download a `.core` file                  |
+| `/get/?core=...`           | GET    | Download a `.core` file by VLNV name     |
 | `/validate/`               | POST   | Validate a core file (`multipart/form`)  |
 | `/publish/`                | POST   | Publish a core file to GitHub            |
+
+- **Download (`/get/`)**: Provide the `core` query parameter with the full VLNV (e.g., `acme:lib1:foo:1.0.0`).
+- **Validation and publishing**: Upload core files (and optional signatures) via `multipart/form-data`.
+- **OpenAPI/Swagger docs**: Interactive documentation is available at `/api/v1/docs/swagger/` and `/api/v1/docs/redoc/`.
 
 ---
 
