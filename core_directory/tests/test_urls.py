@@ -6,7 +6,7 @@ from django.urls import reverse, resolve
     ("redirect_to_docs", {}, 301, False, "get"),
     ("health_check", {}, 200, False, "get"),
     ("core_list", {}, 200, False, "get"),
-    ("core_get", {"package_name": "example"}, 200, False, "get"),
+    ("core_get", {}, 400, False, "get"),
     ("validate", {}, 400, False, "post"),
     ("publish", {}, 400, False, "post"),
     ("api_docs_landing", {}, 200, False, "get"),

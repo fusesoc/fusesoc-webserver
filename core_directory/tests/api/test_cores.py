@@ -1,74 +1,106 @@
-from unittest import mock
 import pytest
 from django.urls import reverse
+from core_directory.models import Vendor, Library, Project, CorePackage
 
 @pytest.mark.django_db
-@mock.patch("core_directory.views.api_views.Github")
-def test_cores_success(mock_github, client, mocker):
+def test_cores_success(client, mocker):
     url = reverse('core_directory:core_list')
-    # Mock GitHub repo and contents
-    mock_repo = mock.Mock()
-    mock_content = mock.Mock()
-    mock_content.type = "file"
-    mock_content.path = "foo.core"
-    mock_repo.get_contents.return_value = [mock_content]
-    mock_github.return_value.get_repo.return_value = mock_repo
-    mocker.patch("os.getenv", side_effect=lambda key, default=None: "dummy_token" if key == "GITHUB_ACCESS_TOKEN" else default)
+    # Mock the queryset to return a list of vlnv_names
+    mock_qs = mocker.Mock()
+    mock_qs.order_by.return_value = mock_qs
+    mock_qs.values_list.return_value = ["acme:lib1:core1:1.0.0"]
+    mock_filter = mocker.patch("core_directory.models.CorePackage.objects.filter", return_value=mock_qs)
 
     response = client.get(url)
     assert response.status_code == 200
-    assert response.json() == ["foo"]
+    assert response.json() == ["acme:lib1:core1:1.0.0"]
+    mock_filter.assert_called_once_with(vlnv_name__icontains="")
 
 @pytest.mark.django_db
-def test_cores_github_exception(client, mocker):
-    url = reverse('core_directory:core_list')
-    mock_repo = mocker.Mock()
-    # Define a mock exception with a .data attribute
-    class GithubException(Exception):
-        def __init__(self):
-            self.data = "fail"
-    mock_repo.get_contents.side_effect = GithubException()
-    mock_github = mocker.patch("core_directory.views.api_views.Github")
-    mock_github.return_value.get_repo.return_value = mock_repo
-    mocker.patch("core_directory.views.api_views.GithubException", GithubException)
-    mocker.patch("os.getenv", side_effect=lambda key, default=None: "dummy_token" if key == "GITHUB_ACCESS_TOKEN" else default)
+def test_multiple_cores_success(client):
+    # Set up test data: two cores in the database
+    vendor = Vendor.objects.create(name="Acme")
+    library = Library.objects.create(vendor=vendor, name="Lib1")
+    project1 = Project.objects.create(vendor=vendor, library=library, name="Core1", description="desc")
+    project2 = Project.objects.create(vendor=vendor, library=library, name="Core2", description="desc")
+    CorePackage.objects.create(
+        project=project1,
+        vlnv_name="acme:lib1:core1:1.0.0",
+        version="1.0.0",
+        version_major=1,
+        version_minor=0,
+        version_patch=0,
+        core_url="https://example.com/core1",
+        description="desc"
+    )
+    CorePackage.objects.create(
+        project=project2,
+        vlnv_name="acme:lib1:core2:1.0.0",
+        version="1.0.0",
+        version_major=1,
+        version_minor=0,
+        version_patch=0,
+        core_url="https://example.com/core2_v1.0.0",
+        description="desc"
+    )
+    CorePackage.objects.create(
+        project=project2,
+        vlnv_name="acme:lib1:core2:0.1.0",
+        version="0.1.0",
+        version_major=0,
+        version_minor=1,
+        version_patch=0,
+        core_url="https://example.com/core2_v0.1.0",
+        description="desc"
+    )
 
+    url = reverse('core_directory:core_list')
     response = client.get(url)
-    assert response.status_code == 500
-    assert "GitHub error" in str(response.content)
-    assert "fail" in str(response.content)
-
-import pytest
-from django.urls import reverse
+    assert response.status_code == 200
+    # The API returns a list of vlnv_names
+    assert set(response.json()) == {"acme:lib1:core1:1.0.0", "acme:lib1:core2:0.1.0", "acme:lib1:core2:1.0.0"}
 
 @pytest.mark.django_db
-def test_cores_with_filter(client, mocker):
+def test_cores_with_filter(client):
+    # Set up test data: two cores in the database
+    vendor = Vendor.objects.create(name="Acme")
+    library = Library.objects.create(vendor=vendor, name="Lib1")
+    project1 = Project.objects.create(vendor=vendor, library=library, name="foo_core", description="desc")
+    project2 = Project.objects.create(vendor=vendor, library=library, name="bar_core", description="desc")
+    cp1 = CorePackage.objects.create(
+        project=project1,
+        vlnv_name="acme:lib1:foo_core:1.0.0",
+        version="1.0.0",
+        version_major=1,
+        version_minor=0,
+        version_patch=0,
+        core_url="https://example.com/foo_core",
+        description="desc"
+    )
+    cp2 = CorePackage.objects.create(
+        project=project2,
+        vlnv_name="acme:lib1:bar_core:1.0.0",
+        version="1.0.0",
+        version_major=1,
+        version_minor=0,
+        version_patch=0,
+        core_url="https://example.com/bar_core",
+        description="desc"
+    )
+
     url = reverse('core_directory:core_list')
-    mock_repo = mocker.Mock()
-    # Simulate two core files, only one matches the filter
-    mock_content1 = mocker.Mock()
-    mock_content1.type = "file"
-    mock_content1.path = "foo.core"
-    mock_content2 = mocker.Mock()
-    mock_content2.type = "file"
-    mock_content2.path = "bar.core"
-    mock_repo.get_contents.return_value = [mock_content1, mock_content2]
-    mock_github = mocker.patch("core_directory.views.api_views.Github")
-    mock_github.return_value.get_repo.return_value = mock_repo
-    mocker.patch("os.getenv", side_effect=lambda key, default=None: "dummy_token" if key == "GITHUB_ACCESS_TOKEN" else default)
 
     # Apply filter 'foo'
     response = client.get(url, {"filter": "foo"})
     assert response.status_code == 200
-    data = response.json()
-    assert data == ["foo"]
+    assert response.json() == ["acme:lib1:foo_core:1.0.0"]
+
     # Apply filter 'bar'
     response = client.get(url, {"filter": "bar"})
     assert response.status_code == 200
-    data = response.json()
-    assert data == ["bar"]
+    assert response.json() == ["acme:lib1:bar_core:1.0.0"]
+
     # Apply filter that matches nothing
     response = client.get(url, {"filter": "baz"})
     assert response.status_code == 200
-    data = response.json()
-    assert data == []
+    assert response.json() == []

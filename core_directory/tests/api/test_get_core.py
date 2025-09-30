@@ -1,61 +1,78 @@
 import pytest
 from django.urls import reverse
+from core_directory.models import Vendor, Library, Project, CorePackage
 
 @pytest.mark.django_db
 def test_getcore_success(client, mocker):
-    url = reverse('core_directory:core_get', kwargs={"package_name": "foo"})
-    # Mock the repo and content
-    mock_repo = mocker.Mock()
-    mock_content = mocker.Mock()
-    mock_content.decoded_content = b"core content"
-    mock_repo.get_contents.return_value = mock_content
-    mock_github = mocker.patch("core_directory.views.api_views.Github")
-    mock_github.return_value.get_repo.return_value = mock_repo
-    mocker.patch("os.getenv", side_effect=lambda key, default=None: "dummy_token" if key == "GITHUB_ACCESS_TOKEN" else default)
+    # Set up test data
+    vendor = Vendor.objects.create(name="Acme")
+    library = Library.objects.create(vendor=vendor, name="Lib1")
+    project = Project.objects.create(vendor=vendor, library=library, name="foo", description="desc")
+    core_package = CorePackage.objects.create(
+        project=project,
+        vlnv_name="acme:lib1:foo:1.0.0",
+        version="1.0.0",
+        version_major=1,
+        version_minor=0,
+        version_patch=0,
+        core_url="https://example.com/foo.core",
+        description="desc"
+    )
 
-    response = client.get(url)
+    # Mock requests.get to return a fake file
+    mock_response = mocker.Mock()
+    mock_response.status_code = 200
+    mock_response.content = b"core file content"
+    mocker.patch("requests.get", return_value=mock_response)
+
+    url = reverse('core_directory:core_get')
+    response = client.get(url, {"core": "acme:lib1:foo:1.0.0"})
     assert response.status_code == 200
-    assert b"core content" in response.content
-    assert response["Content-Disposition"].endswith("foo.core")
+    assert b'core file content' in response.content
+    assert response["Content-Disposition"].endswith("acme_lib1_foo_1.0.0.core")
 
 @pytest.mark.django_db
-def test_getcore_not_found(client, mocker):
-    url = reverse('core_directory:core_get', kwargs={"package_name": "foo"})
-    mock_repo = mocker.Mock()
-    class NotFound(Exception):
-        status = 404
-        data = "not found"
-    mock_repo.get_contents.side_effect = NotFound()
-    mock_github = mocker.patch("core_directory.views.api_views.Github")
-    mock_github.return_value.get_repo.return_value = mock_repo
-    mocker.patch("core_directory.views.api_views.GithubException", NotFound)
-    mocker.patch("os.getenv", side_effect=lambda key, default=None: "dummy_token" if key == "GITHUB_ACCESS_TOKEN" else default)
-
-    response = client.get(url)
+def test_getcore_not_found(client):
+    url = reverse('core_directory:core_get')
+    response = client.get(url, {"core": "acme:lib1:doesnotexist:1.0.0"})
     assert response.status_code == 404
-    assert "not found" in str(response.content)
+    assert b"not available" in response.content or b"not available" in response.json().get("error", "").lower()
 
 import pytest
 from django.urls import reverse
+from core_directory.models import Vendor, Library, Project, CorePackage
 
 @pytest.mark.django_db
-def test_getcore_github_exception(client, mocker):
-    url = reverse('core_directory:core_get', kwargs={"package_name": "foo"})
+def test_getcore_file_not_found(client, mocker):
+    # Set up test data: core exists in DB
+    vendor = Vendor.objects.create(name="Acme")
+    library = Library.objects.create(vendor=vendor, name="Lib1")
+    project = Project.objects.create(vendor=vendor, library=library, name="foo", description="desc")
+    core_package = CorePackage.objects.create(
+        project=project,
+        vlnv_name="acme:lib1:foo:1.0.0",
+        version="1.0.0",
+        version_major=1,
+        version_minor=0,
+        version_patch=0,
+        core_url="https://example.com/foo.core",
+        description="desc"
+    )
 
-    # Define a mock GithubException with .status and .data attributes
-    class GithubException(Exception):
-        def __init__(self, status=500, data="fail"):
-            self.status = status
-            self.data = data
+    # Mock requests.get to simulate file not found (404)
+    mock_response = mocker.Mock()
+    mock_response.status_code = 404
+    mock_response.content = b""
+    mocker.patch("requests.get", return_value=mock_response)
 
-    mock_repo = mocker.Mock()
-    mock_repo.get_contents.side_effect = GithubException(500, "fail")
-    mock_github = mocker.patch("core_directory.views.api_views.Github")
-    mock_github.return_value.get_repo.return_value = mock_repo
-    mocker.patch("core_directory.views.api_views.GithubException", GithubException)
-    mocker.patch("os.getenv", side_effect=lambda key, default=None: "dummy_token" if key == "GITHUB_ACCESS_TOKEN" else default)
+    url = reverse('core_directory:core_get')
+    response = client.get(url, {"core": "acme:lib1:foo:1.0.0"})
+    assert response.status_code == 404
+    assert b"not found" in response.content or b"not found" in response.json().get("error", "").lower()
 
+@pytest.mark.django_db
+def test_getcore_missing_param(client):
+    url = reverse("core_directory:core_get")
     response = client.get(url)
-    assert response.status_code == 500
-    assert b"GitHub error" in response.content
-    assert b"fail" in response.content
+    assert response.status_code == 400
+    assert b"missing" in response.content or b"required" in response.content
