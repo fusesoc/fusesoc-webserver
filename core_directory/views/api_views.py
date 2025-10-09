@@ -5,17 +5,15 @@ from dataclasses import dataclass
 
 import requests
 
+from django.db import IntegrityError, DatabaseError
 from django.http import HttpResponse
 from django.views.generic import TemplateView
 
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
 
-from github import Github
-from github import GithubException, UnknownObjectException
-from github.Auth import Token as GitHubAuthToken
-
 from rest_framework import status
+from rest_framework.exceptions import ValidationError as DRFValidationError
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -140,9 +138,8 @@ class GetCore(APIView):
         try:
             core_object = CorePackage.objects.get(vlnv_name=requested_core_vlnv)
 
-            requested_file = requests.get(core_object.core_url, timeout=10)
-            if requested_file.status_code == 200:
-                response = HttpResponse(requested_file.content, content_type='application/octet-stream')
+            if core_object:
+                response = HttpResponse(core_object.core_file.file, content_type='application/octet-stream')
                 response['Content-Disposition'] = f'attachment; filename={core_object.sanitized_vlnv}.core'
                 return response
             return Response(
@@ -196,119 +193,37 @@ class Publish(APIView):
         Returns:
             Response: Success message or error message.
         """
-        @dataclass
-        class CoreData:
-            """
-            Container for core file publishing data.
-
-            Attributes:
-                vlnv_name (str): The VLNV (Vendor:Library:Name:Version) name of the core.
-                sanitized_name (str): A sanitized version of the core name, suitable for filenames.
-                core_file (Any): The uploaded core file object.
-                signature_file (Any, optional): The uploaded signature file object, if provided.
-                core_url (str, optional): The URL of the core file in the GitHub repository.
-                sig_url (str, optional): The URL of the signature file in the GitHub repository.
-            """
-            vlnv_name: str
-            sanitized_name: str
-            core_file: any
-            signature_file: any = None
-            core_url: str = None
-            sig_url: str = None
-
-            @property
-            def core_file_name(self):
-                """Returns the filename for the core file."""
-                return f'{self.sanitized_name}.core'
-
-            @property
-            def signature_file_name(self):
-                """Returns the filename for the signature file."""
-                return f'{self.sanitized_name}.core.sig'
-
-            def read_core_content(self):
-                """Reads and decodes the core file content as UTF-8."""
-                self.core_file.seek(0)
-                return self.core_file.read().decode('utf-8')
-
-            def read_signature_content(self):
-                """Reads and decodes the signature file content as UTF-8, if present."""
-                if self.signature_file:
-                    self.signature_file.seek(0)
-                    return self.signature_file.read().decode('utf-8')
-                return None
-
         serializer = CoreSerializer(data=request.data)
 
         if serializer.is_valid():
-
             vlnv_name = serializer.validated_data['vlnv_name']
-            # Check if a core with this VLNV already exists in the database
             if CorePackage.objects.filter(vlnv_name=vlnv_name).exists():
                 return Response(
                     {'error': f'Core \'{vlnv_name}\' already exists in FuseSoC Package Directory.'},
                     status=status.HTTP_409_CONFLICT
                 )
 
-            core_data = CoreData(
-                vlnv_name = serializer.validated_data['vlnv_name'],
-                core_file = serializer.validated_data['core_file'],
-                sanitized_name = serializer.validated_data['sanitized_name'],
-                signature_file = serializer.validated_data.get('signature_file')
-            )
-
-            # Initialize GitHub client
-            g = Github(auth=GitHubAuthToken(os.getenv('GITHUB_ACCESS_TOKEN')))
-            repo = g.get_repo(os.getenv('GITHUB_REPO'))
-
-            # Read and encode the core file content
-            encoded_core_content = core_data.read_core_content()
-
+            # Save new core in DB (this will upload files via the storage backend)
             try:
-                # Try to get the core from the repository
-                _ = repo.get_contents(core_data.core_file_name)
-                # The core already exists -> do not create again
+                serializer.save()
+
                 return Response(
-                    {'message': f'Core \'{core_data.vlnv_name}\' already exists in FuseSoC Package Directory.'},
-                    status=status.HTTP_409_CONFLICT
+                    {
+                        'message': 'Core published successfully',
+                    },
+                    status=status.HTTP_201_CREATED
                 )
-            except (UnknownObjectException, IndexError, GithubException):
-                try:
-                    # If the core does not exist, create it
-                    result = repo.create_file(
-                        core_data.core_file_name,
-                        f'Add FuseSoC core {core_data.vlnv_name}',
-                        encoded_core_content,
-                        branch='main')
-
-                    # Get core url from GitHub and add core to database
-                    serializer.validated_data['core_url'] = result['content'].download_url
-
-                    # Handle the optional signature file
-                    if encoded_signature_content := core_data.read_signature_content():
-                        result = repo.create_file(
-                            core_data.signature_file_name,
-                            f'Add signature for {core_data.vlnv_name}',
-                            encoded_signature_content,
-                            branch='main'
-                        )
-
-                        serializer.validated_data['sig_url'] = result['content'].download_url
-
-                    # Save new core in DB
-                    serializer.save()
-
-                    return Response(
-                        {'message': 'Core published successfully'},
-                        status=status.HTTP_201_CREATED
-                    )
-                except GithubException as err:
-                    # Handle specific GitHub API errors
-                    return Response(
-                        {'error': f'GitHub error: {err.data}'},
-                        status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                    )
-
+            except (IntegrityError, DatabaseError, DRFValidationError) as e:
+                return Response(
+                    {'error': f'Error saving core: {str(e)}'},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+            except Exception as e:
+                # Catch-all for storage backend errors (e.g., GitHub API/network issues)
+                return Response(
+                    {'error': f'Unexpected error: {str(e)}'},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class Validate(APIView):

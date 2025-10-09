@@ -114,13 +114,15 @@ class CorePackage(UniqueSanitizedNameMixin):
         null=True,
         help_text="Pre-release label (e.g. 'abc' for version '1.2.3-abc')."
     )
-    core_url = models.URLField(
-        help_text='URL to download the .core file from GitHub or another source.'
+    core_file = models.FileField(
+        blank=False,
+        null=False,
+        help_text='The FuseSoC .core file for this package. This file is required and contains the core metadata.'
     )
-    sig_url = models.URLField(
+    signature_file = models.FileField(
         blank=True,
         null=True,
-        help_text='Optional URL to download the .sig file for signature verification.'
+        help_text='Optional signature (.sig) file for verifying the core file\'s authenticity.'
     )
     description = models.CharField(
         max_length=255,
@@ -142,7 +144,7 @@ class CorePackage(UniqueSanitizedNameMixin):
         Returns True if sig_url is set and valid, False otherwise.
         You can add more validation logic if needed.
         """
-        return bool(self.sig_url)
+        return bool(self.signature_file)
 
     @property
     def sanitized_vlnv(self):

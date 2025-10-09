@@ -34,10 +34,12 @@ from rest_framework import serializers
 from jsonschema import validate, ValidationError, SchemaError
 from fusesoc.capi2.coreparser import Core2Parser
 
+from utils.files import filefield_value_for_storage
 from utils.sanitize import sanitize_string
 from utils.spdx import validate_spdx
 from utils.vlnv import VLNV
 from .models import Project, Vendor, Library, CorePackage, Fileset, FilesetDependency, Target, TargetConfiguration
+
 
 class CoreSerializer(serializers.Serializer):
     """
@@ -60,12 +62,8 @@ class CoreSerializer(serializers.Serializer):
     """
 
     # User-uploaded files
-    core_file = serializers.FileField()
-    signature_file = serializers.FileField(required=False)
-
-    # Optionally, allow user to provide URLs
-    core_url = serializers.URLField(required=False)
-    sig_url = serializers.URLField(required=False, allow_null=True)
+    core_file = serializers.FileField(required=True)
+    signature_file = serializers.FileField(required=False, allow_null=True)
 
     # Read-only fields extracted from the core file
     vlnv_name = serializers.CharField(read_only=True, max_length=255)
@@ -76,6 +74,14 @@ class CoreSerializer(serializers.Serializer):
     version = serializers.CharField(read_only=True, max_length=255)
     description = serializers.CharField(read_only=True, max_length=255, required=False)
     spdx_license = serializers.CharField(read_only=True, max_length=64)
+
+    class Meta:
+        model = CorePackage
+        fields = [
+            'core_file', 'sig_file',
+            'vlnv_name', 'sanitized_name', 'vendor_name', 'library_name', 'project_name',
+            'version', 'description', 'spdx_license'
+        ]
 
     def validate_core_file(self, value):
         """
@@ -218,15 +224,30 @@ class CoreSerializer(serializers.Serializer):
                 name=validated_data['project_name']
             )
 
+            # Prepare file field values
+            core_file_obj = validated_data['core_file']
+            core_file_name = core_file_obj.name
+            core_file_obj.name = f'{validated_data['sanitized_name']}.core'
+
+            sig_file_obj = validated_data.get('signature_file')
+            sig_filename = sig_file_obj.name if sig_file_obj else None
+            if sig_file_obj:
+                sig_file_obj.name = f'{validated_data['sanitized_name']}.core.sig'
+                
+            # Use the helper to avoid duplicate uploads
+            core_file_field_value = filefield_value_for_storage(core_file_name, core_file_obj)
+            sig_file_field_value = filefield_value_for_storage(sig_filename, sig_file_obj) if sig_file_obj else None
+
+
             # Create an save the model instance
             instance = CorePackage.objects.create(
                 project=project,
                 vlnv_name=validated_data['vlnv_name'],
                 version=validated_data['version'],
-                core_url=validated_data.get('core_url'),
-                sig_url=validated_data.get('sig_url'),
                 description=validated_data.get('description'),
-                spdx_license=validated_data.get('spdx_license')
+                spdx_license=validated_data.get('spdx_license'),
+                core_file=core_file_field_value,
+                signature_file=sig_file_field_value
             )
 
             # Create Filesets and their Dependencies

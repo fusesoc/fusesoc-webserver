@@ -174,6 +174,16 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Default file storage backend
+# https://docs.djangoproject.com/en/stable/ref/settings/#default-file-storage
+STORAGES  = {
+    "default": {
+        "BACKEND": "core_directory.storages.github.GitHubStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
 
 REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
