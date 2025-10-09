@@ -16,11 +16,11 @@
     </a>
 </td>
 <td class="align-middle">
-    <a href="{{ core_package.core_url }}" class="btn btn-outline-primary btn-sm me-1" title="Download .core file">
+    <a href="{{ core_package.core_file.url }}" class="btn btn-outline-primary btn-sm me-1" title="Download .core file">
         <i class="bi bi-file-earmark-code"></i> .core
     </a>
     {% if core_package.is_signed %}
-        <a href="{{ core_package.sig_url }}" class="btn btn-outline-secondary btn-sm" title="Download .sig file">
+        <a href="{{ core_package.signature_file.url }}" class="btn btn-outline-secondary btn-sm" title="Download .sig file">
             <i class="bi bi-file-earmark-medical"></i> .sig
         </a>
     {% endif %}

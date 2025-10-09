@@ -109,11 +109,11 @@
             <div class="section-card mb-3 border rounded">
                 <div class="section-header"><i class="bi bi-files me-2"></i> Files</div>
                 <div class="section-content p-3" style="display:block">
-                    <a href="{{ core.core_url }}" class="btn btn-outline-primary btn-sm me-1" title="Download .core file">
+                    <a href="{{ core.core_file.url }}" class="btn btn-outline-primary btn-sm me-1" title="Download .core file">
                         <i class="bi bi-file-earmark-code"></i> .core
                     </a>
                     {% if core.is_signed %}
-                    <a href="{{ core.sig_url }}" class="btn btn-outline-secondary btn-sm" title="Download .sig file">
+                    <a href="{{ core.signature_file.url }}" class="btn btn-outline-secondary btn-sm" title="Download .sig file">
                         <i class="bi bi-file-earmark-medical"></i> .sig
                     </a>
                     {% endif %}
