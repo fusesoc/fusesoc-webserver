@@ -11,6 +11,13 @@ from core_directory.models import Vendor, Library, Project, CorePackage
 import pathlib
 
 FIXTURES = pathlib.Path(__file__).parent.parent / "fixtures"
+
+@pytest.fixture(autouse=True)
+def patch_corepackage_storage(settings):
+    from ...storages.dummy_storage import DummyStorage
+    settings.DEFAULT_FILE_STORAGE = 'path.to.dummy_storage.DummyStorage'
+    CorePackage._meta.get_field('core_file').storage = DummyStorage()
+    CorePackage._meta.get_field('signature_file').storage = DummyStorage()
     
 def get_core_sig_pairs(directory):
     for core_file in directory.glob("*.core"):
@@ -43,7 +50,13 @@ def test_publish_no_core_file(client, mocker):
 )
 def test_publish_valid_core_and_sig(client, mocker, core_path, sig_path):
     url = reverse('core_directory:publish')
-    mock_save = mocker.patch('django.core.files.storage.default_storage.save', return_value='test_core.core')
+
+    # Get the DummyStorage instance used by the FileFields
+    storage_core = CorePackage._meta.get_field('core_file').storage
+    storage_sig = CorePackage._meta.get_field('signature_file').storage
+    # Patch the save method on DummyStorage
+    mock_save_core = mocker.patch.object(storage_core, 'save', side_effect=lambda name, content, **kwargs: name)
+    mock_save_sig = mocker.patch.object(storage_sig, 'save', side_effect=lambda name, content, **kwargs: name)
     
     with open(core_path, "rb") as f_core:
         files = {'core_file': SimpleUploadedFile(core_path.name, f_core.read(), content_type="application/x-yaml")}
@@ -56,7 +69,8 @@ def test_publish_valid_core_and_sig(client, mocker, core_path, sig_path):
     assert response.status_code == 201
     assert "message" in data
     assert "Core published successfully" in data["message"]
-    assert mock_save.call_count == 2
+    mock_save_core.assert_called_once()
+    mock_save_sig.assert_called_once()
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
@@ -85,7 +99,12 @@ def test_publish_invalid_core_and_sig(client, mocker, core_path, sig_path):
 )
 def test_publish_valid_core_no_sig(client, mocker, core_path):
     url = reverse('core_directory:publish')
-    mock_save = mocker.patch('django.core.files.storage.default_storage.save', return_value='test_core.core')
+    
+    # Get the DummyStorage instance used by the FileFields
+    storage = CorePackage._meta.get_field('core_file').storage
+    # Patch the save method on DummyStorage
+    mock_save = mocker.patch.object(storage, 'save', side_effect=lambda name, content, **kwargs: name)
+
     
     with open(core_path, "rb") as f_core:
         files = {'core_file': SimpleUploadedFile(core_path.name, f_core.read(), content_type="application/x-yaml")}
@@ -104,13 +123,17 @@ def test_publish_valid_core_no_sig(client, mocker, core_path):
 )
 def test_publish_invalid_core_no_sig(client, mocker, core_path):
     url = reverse('core_directory:publish')
-    mock_save = mocker.patch('django.core.files.storage.default_storage.save', return_value='test_core.core')
+    
+    # Get the DummyStorage instance used by the FileFields
+    storage_core = CorePackage._meta.get_field('core_file').storage
+    # Patch the save method on DummyStorage
+    mock_save_core = mocker.patch.object(storage_core, 'save', side_effect=lambda name, content, **kwargs: name)
     
     with open(core_path, "rb") as f_core:
         files = {'core_file': SimpleUploadedFile(core_path.name, f_core.read(), content_type="application/x-yaml")}
         response = client.post(url, data=files)
     assert response.status_code == 400
-    mock_save.assert_not_called()
+    mock_save_core.assert_not_called()
 
 @pytest.mark.django_db
 def test_republish_existing_core(client, mocker):
@@ -147,5 +170,5 @@ def test_republish_existing_core(client, mocker):
     assert response.status_code == 409
     assert "error" in data
     assert "already exists" in data["error"]
-    mock_save.assert_called_once()
+    mock_save.assert_not_called()
     

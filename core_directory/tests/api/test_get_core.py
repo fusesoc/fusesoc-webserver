@@ -1,8 +1,17 @@
 import pytest
 import io
 from django.urls import reverse
-from django.core.files.storage import default_storage
+
+from django.core.files.storage import default_storage, FileSystemStorage
 from core_directory.models import Vendor, Library, Project, CorePackage
+
+
+@pytest.fixture(autouse=True)
+def patch_corepackage_storage(settings):
+    from ...storages.dummy_storage import DummyStorage
+    settings.DEFAULT_FILE_STORAGE = 'path.to.dummy_storage.DummyStorage'
+    CorePackage._meta.get_field('core_file').storage = DummyStorage()
+    CorePackage._meta.get_field('signature_file').storage = DummyStorage()
 
 @pytest.mark.django_db
 def test_getcore_success(client, mocker):
@@ -20,8 +29,9 @@ def test_getcore_success(client, mocker):
         core_file="foo.core",
         description="desc"
     )
-    # Mock the storage open method to return a BytesIO stream
-    mocker.patch.object(default_storage, 'open', return_value=io.BytesIO(b"core file content"))
+    # Patch the storage used by the FileField
+    storage = CorePackage._meta.get_field('core_file').storage
+    mocker.patch.object(storage, 'open', return_value=io.BytesIO(b"core file content"))
 
     url = reverse('core_directory:core_get')
     response = client.get(url, {"core": "acme:lib1:foo:1.0.0"})
@@ -46,7 +56,7 @@ def test_getcore_file_not_found(client, mocker):
     vendor = Vendor.objects.create(name="Acme")
     library = Library.objects.create(vendor=vendor, name="Lib1")
     project = Project.objects.create(vendor=vendor, library=library, name="foo", description="desc")
-    
+    mocker.patch.object(default_storage, 'open', side_effect=FileNotFoundError("No such file"))
     CorePackage.objects.create(
         project=project,
         vlnv_name="acme:lib1:foo:1.0.0",
@@ -58,8 +68,8 @@ def test_getcore_file_not_found(client, mocker):
         description="desc"
     )
 
-    # Mock the storage open method to return a BytesIO stream
-    mocker.patch.object(default_storage, 'open', side_effect=FileNotFoundError("No such file"))
+    storage = CorePackage._meta.get_field('core_file').storage
+    mocker.patch.object(storage, 'open', side_effect=FileNotFoundError("No such file"))
 
     url = reverse('core_directory:core_get')
     response = client.get(url, {"core": "acme:lib1:foo:1.0.0"})

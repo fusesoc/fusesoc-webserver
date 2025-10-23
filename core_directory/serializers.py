@@ -213,7 +213,7 @@ class CoreSerializer(serializers.Serializer):
 
         return attrs
 
-    def create(self, validated_data):
+    def create(self, validated_data): # pylint: disable=too-many-locals
         with transaction.atomic():
             # Get or create Vendor, Library, Project
             vendor, _ = Vendor.objects.get_or_create(name=validated_data['vendor_name'])
@@ -227,13 +227,13 @@ class CoreSerializer(serializers.Serializer):
             # Prepare file field values
             core_file_obj = validated_data['core_file']
             core_file_name = core_file_obj.name
-            core_file_obj.name = f'{validated_data['sanitized_name']}.core'
+            core_file_obj.name = f"{validated_data['sanitized_name']}.core"
 
             sig_file_obj = validated_data.get('signature_file')
             sig_filename = sig_file_obj.name if sig_file_obj else None
             if sig_file_obj:
-                sig_file_obj.name = f'{validated_data['sanitized_name']}.core.sig'
-                
+                sig_file_obj.name = f"{validated_data['sanitized_name']}.core.sig"
+
             # Use the helper to avoid duplicate uploads
             core_file_field_value = filefield_value_for_storage(core_file_name, core_file_obj)
             sig_file_field_value = filefield_value_for_storage(sig_filename, sig_file_obj) if sig_file_obj else None

@@ -21,11 +21,11 @@ Example usage:
     storage.delete('foo.txt')
 """
 
-import requests
+import os
 import zipfile
 import shutil
 import tempfile
-import os
+import requests
 
 from django.core.files.storage import Storage
 from django.core.files.base import ContentFile
@@ -55,7 +55,7 @@ class GitHubStorage(Storage):
             return None
         return os.path.join(self.cache_dir, name)
 
-    def _open(self, name, mode='rb'):
+    def _open(self, name, _mode='rb'):
         """
         Retrieve file content from cache if available, else from GitHub and cache it.
         """
@@ -71,10 +71,10 @@ class GitHubStorage(Storage):
                 with open(cache_path, 'wb') as f:
                     f.write(content)
             return ContentFile(content, name=name)
-        except UnknownObjectException:
-            raise FileNotFoundError(f"{name} not found in GitHub repo")
+        except UnknownObjectException as e:
+            raise FileNotFoundError(f"{name} not found in GitHub repo") from e
         except GithubException as e:
-            raise IOError(f"GitHub error: {e}")
+            raise IOError(f"GitHub error: {e}") from e
 
     def _save(self, name, content):
         """
@@ -104,7 +104,7 @@ class GitHubStorage(Storage):
                 branch=self.branch
             )
         except GithubException as e:
-            raise IOError(f"GitHub error: {e}")
+            raise IOError(f"GitHub error: {e}") from e
 
         # Optionally update cache
         cache_path = self._cache_path(name)
@@ -129,7 +129,7 @@ class GitHubStorage(Storage):
         except UnknownObjectException:
             pass  # Already deleted
         except GithubException as e:
-            raise IOError(f"GitHub error: {e}")
+            raise IOError(f"GitHub error: {e}") from e
 
         # Invalidate cache
         cache_path = self._cache_path(name)
@@ -182,7 +182,7 @@ class GitHubStorage(Storage):
         files = [c.name for c in contents if c.type == 'file']
         dirs = [c.name for c in contents if c.type == 'dir']
         return dirs, files
-    
+
     def clear_cache(self):
         """
         Remove all files and subdirectories from the given cache directory.
@@ -196,15 +196,15 @@ class GitHubStorage(Storage):
                     os.unlink(file_path)
                 elif os.path.isdir(file_path):
                     shutil.rmtree(file_path)
-            except Exception as e:
+            except OSError as e:
                 print(f'Failed to delete {file_path}. Reason: {e}')
-    
+
     def prefill_cache(self):
         """
         Download the GitHub repo as a zip and prefill the cache directory with its files.
         The cache is cleared first to remove any old or stale files.
         Only works if cache_dir is set.
-        """      
+        """
         if not self.cache_dir:
             raise RuntimeError("No cache_dir set for GitHubStorage; cannot prefill cache.")
 
@@ -212,7 +212,7 @@ class GitHubStorage(Storage):
 
         zip_url = f"https://api.github.com/repos/{self.repo_name}/zipball/{self.branch}"
         headers = {'Authorization': f'token {self.access_token}'}
-        response = requests.get(zip_url, headers=headers, stream=True)
+        response = requests.get(zip_url, headers=headers, stream=True, timeout=30)
         if response.status_code != 200:
             raise RuntimeError(f"Failed to download repo archive: {response.status_code} {response.text}")
 
@@ -235,4 +235,19 @@ class GitHubStorage(Storage):
                         os.makedirs(os.path.dirname(cache_path), exist_ok=True)
                         with open(src_path, 'rb') as src, open(cache_path, 'wb') as dst:
                             dst.write(src.read())
-    
+
+    def get_accessed_time(self, name):
+        """Not supported for GitHubStorage."""
+        raise NotImplementedError("get_accessed_time is not supported by GitHubStorage.")
+
+    def get_created_time(self, name):
+        """Not supported for GitHubStorage."""
+        raise NotImplementedError("get_created_time is not supported by GitHubStorage.")
+
+    def get_modified_time(self, name):
+        """Not supported for GitHubStorage."""
+        raise NotImplementedError("get_modified_time is not supported by GitHubStorage.")
+
+    def path(self, name):
+        """Not supported for GitHubStorage."""
+        raise NotImplementedError("path() is not available for GitHubStorage.")
