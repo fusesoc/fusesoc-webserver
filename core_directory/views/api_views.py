@@ -151,6 +151,12 @@ class GetCore(APIView):
                 {'error': f'FuseSoC Core Package {requested_core_vlnv} not available.'},
                 status=status.HTTP_404_NOT_FOUND
             )
+        except FileNotFoundError:
+            return Response(
+                {'error': f'FuseSoC Core Package {requested_core_vlnv} not available.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+            
 class Publish(APIView):
     """Endpoint for publishing a new core file to FuseSoC Package Directory."""
     parser_classes = (MultiPartParser, FormParser)
@@ -193,6 +199,10 @@ class Publish(APIView):
         Returns:
             Response: Success message or error message.
         """
+        file_obj = request.data.get('core_file')
+        if not file_obj:
+            return Response({'error': 'No core file provided'}, status=status.HTTP_400_BAD_REQUEST)
+        
         serializer = CoreSerializer(data=request.data)
 
         if serializer.is_valid():
@@ -265,7 +275,7 @@ class Validate(APIView):
         """
         file_obj = request.data.get('core_file')
         if not file_obj:
-            return Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'No core file provided'}, status=status.HTTP_400_BAD_REQUEST)
 
         serializer = CoreSerializer(data=request.data)
         if serializer.is_valid():

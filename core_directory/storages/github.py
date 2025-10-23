@@ -152,6 +152,10 @@ class GitHubStorage(Storage):
         except UnknownObjectException:
             return False
 
+    def get_available_name(self, name, max_length=None):
+        self.delete(name)
+        return name
+
     def url(self, name):
         """
         Return the direct raw URL for the file on GitHub.

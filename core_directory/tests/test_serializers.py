@@ -7,12 +7,18 @@ import yaml
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.files.storage import FileSystemStorage
 from jsonschema import ValidationError as JsonSchemaValidationError, SchemaError
 import json
 
 from core_directory.serializers import CoreSerializer
 from core_directory.models import Vendor, Library, Project, CorePackage
 from utils.spdx import get_spdx_license_ids
+
+@pytest.fixture(autouse=True)
+def patch_storage_save(mocker):
+    mocker.patch('django.core.files.storage.default_storage.save', return_value='dummy.txt')
 
 # --- Helper to create a fake file object ---
 class FakeFile(io.BytesIO):
@@ -213,9 +219,10 @@ def test_core_serializer_create():
         "library_name": "Lib1",
         "project_name": "Core1",
         "vlnv_name": "Acme:Lib1:Core1:1.0.0",
+        "sanitized_name": "acme_lib1_core1_1_0_0",
         "version": "1.0.0",
-        "core_url": "https://example.com/core",
-        "sig_url": None,
+        "core_file": SimpleUploadedFile("acme_lib1_core1_1_0_0.core", b"CAPI=2:\nname: Acme:Lib1:Core1:1.0.0\n"),
+        "signature_file": None,
         "description": "A test core package.",
         "core_content_yaml": {
             "filesets": {
@@ -235,7 +242,6 @@ def test_core_serializer_create():
             }
         }
     }
-
     serializer = CoreSerializer()
     instance = serializer.create(validated_data)
 
@@ -245,7 +251,7 @@ def test_core_serializer_create():
     assert instance.project.library.name == "Lib1"
     assert instance.project.name == "Core1"
     assert instance.version == "1.0.0"
-    assert instance.core_url == "https://example.com/core"
+    assert instance.core_file == "acme_lib1_core1_1_0_0.core"
     assert instance.description == "A test core package."
     # Fileset and Target should also exist
     filesets = instance.filesets.all()
@@ -269,7 +275,8 @@ def test_core_serializer_create_with_dependencies():
         "project_name": "Core1",
         "vlnv_name": "Acme:Lib1:Core1:1.0.0",
         "version": "1.0.0",
-        "core_url": "https://example.com/core",
+        "sanitized_name": "acme_lib1_core1_1_0_0",
+        "core_file": SimpleUploadedFile("acme_lib1_core1_1_0_0.core", b"CAPI=2:\nname: Acme:Lib1:Core1:1.0.0\n"),
         "sig_url": None,
         "description": "A test core package.",
         "core_content_yaml": {
@@ -294,7 +301,6 @@ def test_core_serializer_create_with_dependencies():
             }
         }
     }
-
     serializer = CoreSerializer()
     instance = serializer.create(validated_data)
 
@@ -326,7 +332,8 @@ def test_core_serializer_create_with_valid_spdx_license():
         "project_name": "Core1",
         "vlnv_name": "Acme:Lib1:Core1:1.0.0",
         "version": "1.0.0",
-        "core_url": "https://example.com/core",
+        "sanitized_name": "acme_lib1_core1_1_0_0",
+        "core_file": SimpleUploadedFile("acme_lib1_core1_1_0_0.core", b"CAPI=2:\nname: Acme:Lib1:Core1:1.0.0\n"),
         "sig_url": None,
         "description": "A test core package.",
         "spdx_license": valid_license,
@@ -348,6 +355,7 @@ def test_core_serializer_create_with_valid_spdx_license():
             }
         }
     }
+    
     serializer = CoreSerializer()
     instance = serializer.create(validated_data)
     assert isinstance(instance, CorePackage)
@@ -361,7 +369,8 @@ def test_core_serializer_create_with_invalid_license_fails():
         "project_name": "Core1",
         "vlnv_name": "Acme:Lib1:Core1:1.0.0",
         "version": "1.0.0",
-        "core_url": "https://example.com/core",
+        "sanitized_name": "acme_lib1_core1_1_0_0",
+        "core_file": SimpleUploadedFile("acme_lib1_core1_1_0_0.core", b"CAPI=2:\nname: Acme:Lib1:Core1:1.0.0\n"),
         "sig_url": None,
         "description": "A test core package.",
         "spdx_license": "NOT_A_VALID_LICENSE",
@@ -383,6 +392,7 @@ def test_core_serializer_create_with_invalid_license_fails():
             }
         }
     }
+    
     serializer = CoreSerializer()
     with pytest.raises(Exception):  # Could be ValidationError or IntegrityError depending on your model
         serializer.create(validated_data)
@@ -417,6 +427,7 @@ def test_core_serializer_create_with_license_ref_fails():
             }
         }
     }
+    
     serializer = CoreSerializer()
     with pytest.raises(Exception):  # Could be ValidationError or IntegrityError depending on your model
         serializer.create(validated_data)
@@ -429,7 +440,8 @@ def test_core_serializer_create_with_missing_license():
         "project_name": "Core1",
         "vlnv_name": "Acme:Lib1:Core1:1.0.0",
         "version": "1.0.0",
-        "core_url": "https://example.com/core",
+        "sanitized_name": "acme_lib1_core1_1_0_0",
+        "core_file": SimpleUploadedFile("acme_lib1_core1_1_0_0.core", b"CAPI=2:\nname: Acme:Lib1:Core1:1.0.0\n"),
         "sig_url": None,
         "description": "A test core package.",
         # No spdx_license field
@@ -450,7 +462,7 @@ def test_core_serializer_create_with_missing_license():
                 }
             }
         }
-    }
+    }   
     serializer = CoreSerializer()
     instance = serializer.create(validated_data)
     assert isinstance(instance, CorePackage)
