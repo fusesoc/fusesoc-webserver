@@ -57,9 +57,25 @@ class Command(BaseCommand):
 
     def initialize_from_storage(self):
         """
+        Loads core and signature files from the configured GitHub repository into the database.
 
+        This method uses the GitHubStorage backend to list and retrieve all `.core` files (and their
+        corresponding `.sig` files, if present) from the root of the repository. For each core file,
+        it creates a Django ContentFile object and passes it, along with the signature file (if available),
+        to the CoreSerializer for validation and saving. If the storage backend supports cache prefill,
+        the cache is prefilled before processing files.
+
+        Any errors encountered during validation or saving are printed to the command output.
+
+        Raises:
+            RuntimeError: If the storage cache cannot be prefilled or if required files are missing.
+            FileNotFoundError: If a core or signature file cannot be found in the repository.
+
+        Side Effects:
+            - Populates the database with CorePackage and related objects for each valid core file.
+            - Prints progress and error messages to the command output.
         """
-    
+
         storage = GitHubStorage()
 
         # Prefill cache if supported
@@ -69,7 +85,7 @@ class Command(BaseCommand):
             try:
                 prefill()
                 self.stdout.write(self.style.SUCCESS('Cache prefilled.'))
-            except RuntimeError as e:  
+            except RuntimeError as e:
                 self.stdout.write(self.style.ERROR(f'Error during cache prefill: {e}'))
 
         _, files_in_root = storage.listdir('')

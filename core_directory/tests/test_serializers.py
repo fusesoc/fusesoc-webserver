@@ -17,8 +17,11 @@ from core_directory.models import Vendor, Library, Project, CorePackage
 from utils.spdx import get_spdx_license_ids
 
 @pytest.fixture(autouse=True)
-def patch_storage_save(mocker):
-    mocker.patch('django.core.files.storage.default_storage.save', return_value='dummy.txt')
+def patch_corepackage_storage(settings):
+    from ..storages.dummy_storage import DummyStorage
+    settings.DEFAULT_FILE_STORAGE = 'path.to.dummy_storage.DummyStorage'
+    CorePackage._meta.get_field('core_file').storage = DummyStorage()
+    CorePackage._meta.get_field('signature_file').storage = DummyStorage()
 
 # --- Helper to create a fake file object ---
 class FakeFile(io.BytesIO):

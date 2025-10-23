@@ -1,10 +1,4 @@
-"""API views for core_directory"""
-import os
-
-from dataclasses import dataclass
-
-import requests
-
+"""API views for FuseSoC Package Directory."""
 from django.db import IntegrityError, DatabaseError
 from django.http import HttpResponse
 from django.views.generic import TemplateView
@@ -156,7 +150,7 @@ class GetCore(APIView):
                 {'error': f'FuseSoC Core Package {requested_core_vlnv} not available.'},
                 status=status.HTTP_404_NOT_FOUND
             )
-            
+
 class Publish(APIView):
     """Endpoint for publishing a new core file to FuseSoC Package Directory."""
     parser_classes = (MultiPartParser, FormParser)
@@ -202,7 +196,7 @@ class Publish(APIView):
         file_obj = request.data.get('core_file')
         if not file_obj:
             return Response({'error': 'No core file provided'}, status=status.HTTP_400_BAD_REQUEST)
-        
+
         serializer = CoreSerializer(data=request.data)
 
         if serializer.is_valid():
@@ -228,8 +222,7 @@ class Publish(APIView):
                     {'error': f'Error saving core: {str(e)}'},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
-            except Exception as e:
-                # Catch-all for storage backend errors (e.g., GitHub API/network issues)
+            except (OSError, IOError) as e:
                 return Response(
                     {'error': f'Unexpected error: {str(e)}'},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
