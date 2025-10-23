@@ -51,7 +51,7 @@ def test_core_package_list_view(client):
         project=p,
         vlnv_name="acme:lib1:core1:1.0.0",
         version="1.0.0",
-        core_url="https://example.com/core",
+        core_file="acme_lib1_core1_1_0_0.core",
         description="desc"
     )
     url = reverse("core-package-list")

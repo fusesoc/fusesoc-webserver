@@ -14,7 +14,7 @@ def test_core_detail_view_by_pk(client):
         project=p,
         vlnv_name="acme:lib1:core1:1.0.0",
         version="1.0.0",
-        core_url="https://example.com/core",
+        core_file="acme_lib1_core1_1_0_0.core",
         description="desc"
     )
     url = reverse("core-detail", kwargs={"pk": cp.pk})
@@ -38,7 +38,7 @@ def test_core_detail_by_vlnv_view(client):
         project=p,
         vlnv_name="acme:lib1:core1:1.0.0",
         version="1.0.0",
-        core_url="https://example.com/core",
+        core_file="acme_lib1_core1_1_0_0.core",
         description="desc"
     )
     url = reverse("core-detail-vlnv", kwargs={
@@ -59,7 +59,7 @@ def test_core_detail_by_vlnv_view_without_lib(client):
         project=p,
         vlnv_name="acme:lib1:core1:1.0.0",
         version="1.0.0",
-        core_url="https://example.com/core",
+        core_file="acme_lib1_core1_1_0_0.core",
         description="desc"
     )
     url = reverse("core-detail-vlnv", kwargs={
@@ -81,7 +81,7 @@ def test_core_detail_with_target_and_filesets(client):
         project=project,
         vlnv_name="acme:lib1:core1:1.0.0",
         version="1.0.0",
-        core_url="https://example.com/core",
+        core_file="acme_lib1_core1_1_0_0.core",
         description="desc"
     )
     # Add fileset

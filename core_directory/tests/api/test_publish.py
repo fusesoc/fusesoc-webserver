@@ -4,172 +4,148 @@ from io import BytesIO
 
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.files.storage import default_storage
 
 from core_directory.models import Vendor, Library, Project, CorePackage
 
-@pytest.mark.django_db
-def test_publish_success(client, mocker):
-    url = reverse('core_directory:publish')
-    # Mock serializer
-    mock_serializer = mocker.patch("core_directory.views.api_views.CoreSerializer")
-    instance = mock_serializer.return_value
-    instance.is_valid.return_value = True
-    instance.validated_data = {
-        "vlnv_name": "vendor:lib:core:1.0.0",
-        "core_file": SimpleUploadedFile("test.core", b"dummy"),
-        "sanitized_name": "core",
-        "signature_file": None,
-    }
-    # Mock github repo
-    mock_repo = mocker.Mock()
-    # Define a mock exception that matches the view's except block
-    class GithubException(Exception):
-        pass
-    mock_repo.get_contents.side_effect = GithubException()
-    mock_repo.create_file.return_value = {"content": mocker.Mock(download_url="https://example.com/core")}
-    mock_github = mocker.patch("core_directory.views.api_views.Github")
-    mock_github.return_value.get_repo.return_value = mock_repo
-    mocker.patch("core_directory.views.api_views.GithubException", GithubException)
-    mocker.patch("os.getenv", side_effect=lambda key, default=None: "dummy_token" if key == "GITHUB_ACCESS_TOKEN" else default)
+import pathlib
 
-    response = client.post(url, data={"core_file": SimpleUploadedFile("test.core", b"dummy")})
-    assert response.status_code is 201
-    assert b"published" in response.content or b"valid" in response.content
-
-@pytest.mark.django_db
-def test_publish_core_already_exists_in_db(client, mocker):
-    # Set up test data: create a core with the same VLNV in the database
-    vendor = Vendor.objects.create(name="Acme")
-    library = Library.objects.create(vendor=vendor, name="Lib1")
-    project = Project.objects.create(vendor=vendor, library=library, name="foo", description="desc")
-    CorePackage.objects.create(
-        project=project,
-        vlnv_name="acme:lib1:foo:1.0.0",
-        version="1.0.0",
-        version_major=1,
-        version_minor=0,
-        version_patch=0,
-        core_url="https://example.com/foo.core",
-        description="desc"
-    )
+FIXTURES = pathlib.Path(__file__).parent.parent / "fixtures"
     
-    url = reverse('core_directory:publish')
-    # Mock serializer
-    mock_serializer = mocker.patch("core_directory.views.api_views.CoreSerializer")
-    instance = mock_serializer.return_value
-    instance.is_valid.return_value = True
-    instance.validated_data = {
-        "vlnv_name": "acme:lib1:foo:1.0.0",
-        "core_file": SimpleUploadedFile("test.core", b"dummy"),
-        "sanitized_name": "core",
-        "signature_file": None,
-    }
+def get_core_sig_pairs(directory):
+    for core_file in directory.glob("*.core"):
+        sig_file = core_file.with_suffix(".sig")
+        yield (core_file, sig_file if sig_file.exists() else None)
 
-    response = client.post(url, data={"core_file": SimpleUploadedFile("test.core", b"dummy")})
-    assert response.status_code == 409
-    assert b"already exists" in response.content
+# Precompute pairs and ids for valid and invalid
+valid_pairs = list(get_core_sig_pairs(FIXTURES / "valid"))
+valid_ids = [f"valid/{core_path.name}" for core_path, _ in valid_pairs]
+
+invalid_pairs = list(get_core_sig_pairs(FIXTURES / "invalid"))
+invalid_ids = [f"invalid/{core_path.name}" for core_path, _ in invalid_pairs]
+
+@pytest.mark.django_db
+def test_publish_no_core_file(client, mocker):
+    url = reverse('core_directory:publish')
+    mock_save = mocker.patch('django.core.files.storage.default_storage.save', return_value='test_core.core')
     
-@pytest.mark.django_db
-def test_publish_already_exists_on_github(client, mocker):
-    url = reverse('core_directory:publish')
-    mock_serializer = mocker.patch("core_directory.views.api_views.CoreSerializer")
-    instance = mock_serializer.return_value
-    instance.is_valid.return_value = True
-    instance.validated_data = {
-        "vlnv_name": "vendor:lib:core:1.0.0",
-        "core_file": SimpleUploadedFile("test.core", b"dummy"),
-        "sanitized_name": "core",
-        "signature_file": None,
-    }
-    mock_repo = mocker.Mock()
-    mock_repo.get_contents.return_value = True  # Simulate file exists
-    mock_github = mocker.patch("core_directory.views.api_views.Github")
-    mock_github.return_value.get_repo.return_value = mock_repo
-    mocker.patch("os.getenv", side_effect=lambda key, default=None: "dummy_token" if key == "GITHUB_ACCESS_TOKEN" else default)
-
-    response = client.post(url, data={"core_file": SimpleUploadedFile("test.core", b"dummy")})
-    assert response.status_code == 409
-    assert b"already exists" in response.content
-
-@pytest.mark.django_db
-def test_publish_github_error(client, mocker):
-    url = reverse('core_directory:publish')
-    mock_serializer = mocker.patch("core_directory.views.api_views.CoreSerializer")
-    instance = mock_serializer.return_value
-    instance.is_valid.return_value = True
-    instance.validated_data = {
-        "vlnv_name": "vendor:lib:core:1.0.0",
-        "core_file": SimpleUploadedFile("test.core", b"dummy"),
-        "sanitized_name": "core",
-        "signature_file": None,
-    }
-    class UnknownObjectException(Exception):
-        pass
-    class GithubException(Exception):
-        data = "fail"
-    mock_repo = mocker.Mock()
-    # Raise UnknownObjectException to enter the except block
-    mock_repo.get_contents.side_effect = UnknownObjectException()
-    # Raise GithubException from create_file to simulate a GitHub error
-    mock_repo.create_file.side_effect = GithubException()
-    mock_github = mocker.patch("core_directory.views.api_views.Github")
-    mock_github.return_value.get_repo.return_value = mock_repo
-    mocker.patch("core_directory.views.api_views.UnknownObjectException", UnknownObjectException)
-    mocker.patch("core_directory.views.api_views.GithubException", GithubException)
-    mocker.patch("os.getenv", side_effect=lambda key, default=None: "dummy_token" if key == "GITHUB_ACCESS_TOKEN" else default)
-
-    response = client.post(url, data={"core_file": SimpleUploadedFile("test.core", b"dummy")})
-    assert response.status_code == 500
-    assert b"GitHub error" in response.content or b"fail" in response.content
-
-@pytest.mark.django_db
-def test_publish_invalid_serializer(client, mocker):
-    url = reverse('core_directory:publish')
-    mock_serializer = mocker.patch("core_directory.views.api_views.CoreSerializer")
-    instance = mock_serializer.return_value
-    instance.is_valid.return_value = False
-    instance.errors = {"field": ["error"]}
-    mocker.patch("os.getenv", side_effect=lambda key, default=None: "dummy_token" if key == "GITHUB_ACCESS_TOKEN" else default)
-    response = client.post(url, data={"core_file": SimpleUploadedFile("test.core", b"dummy")})
+    response = client.post(url, data={})
+    data = response.json()
     assert response.status_code == 400
-    assert b"error" in response.content
+    assert "error" in data
+    mock_save.assert_not_called()
 
 @pytest.mark.django_db
-def test_publish_with_signature(client, mocker):
+@pytest.mark.parametrize(
+    "core_path,sig_path",
+    valid_pairs,
+    ids=valid_ids
+)
+def test_publish_valid_core_and_sig(client, mocker, core_path, sig_path):
     url = reverse('core_directory:publish')
-    # Mock serializer
-    mock_serializer = mocker.patch("core_directory.views.api_views.CoreSerializer")
-    instance = mock_serializer.return_value
-    instance.is_valid.return_value = True
-    instance.validated_data = {
-        "vlnv_name": "vendor:lib:core:1.0.0",
-        "core_file": SimpleUploadedFile("test.core", b"dummy core"),
-        "sanitized_name": "core",
-        "signature_file": SimpleUploadedFile("test.core.sig", b"dummy sig"),
-    }
-    # Mock github repo
-    mock_repo = mocker.Mock()
-    class UnknownObjectException(Exception):
-        pass
-    mock_repo.get_contents.side_effect = UnknownObjectException()
-    # Simulate create_file for core and signature
-    mock_repo.create_file.side_effect = [
-        {"content": mocker.Mock(download_url="https://example.com/core")},
-        {"content": mocker.Mock(download_url="https://example.com/core.sig")},
-    ]
-    mock_github = mocker.patch("core_directory.views.api_views.Github")
-    mock_github.return_value.get_repo.return_value = mock_repo
-    mocker.patch("core_directory.views.api_views.UnknownObjectException", UnknownObjectException)
-    mocker.patch("os.getenv", side_effect=lambda key, default=None: "dummy_token" if key == "GITHUB_ACCESS_TOKEN" else default)
+    mock_save = mocker.patch('django.core.files.storage.default_storage.save', return_value='test_core.core')
+    
+    with open(core_path, "rb") as f_core:
+        files = {'core_file': SimpleUploadedFile(core_path.name, f_core.read(), content_type="application/x-yaml")}
+        if sig_path:
+            with open(sig_path, "rb") as f_sig:
+                files['signature_file'] = SimpleUploadedFile(sig_path.name, f_sig.read(), content_type="application/x-yaml")
+        response = client.post(url, data=files)
 
-    response = client.post(
-        url,
-        data={
-            "core_file": SimpleUploadedFile("test.core", b"dummy core"),
-            "signature_file": SimpleUploadedFile("test.core.sig", b"dummy sig"),
-        }
-    )
-    assert response.status_code in (200, 201)
-    assert b"published" in response.content or b"valid" in response.content
-    # Optionally, check that create_file was called twice (core and sig)
-    assert mock_repo.create_file.call_count == 2
+    data = response.json()
+    assert response.status_code == 201
+    assert "message" in data
+    assert "Core published successfully" in data["message"]
+    assert mock_save.call_count == 2
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "core_path,sig_path",
+    invalid_pairs,
+    ids=invalid_ids
+)
+def test_publish_invalid_core_and_sig(client, mocker, core_path, sig_path):
+    url = reverse('core_directory:publish')
+    mock_save = mocker.patch('django.core.files.storage.default_storage.save', return_value='test_core.core')
+    
+    with open(core_path, "rb") as f_core:
+        files = {'core_file': SimpleUploadedFile(core_path.name, f_core.read(), content_type="application/x-yaml")}
+        if sig_path:
+            with open(sig_path, "rb") as f_sig:
+                files['signature_file'] = SimpleUploadedFile(sig_path.name, f_sig.read(), content_type="application/x-yaml")
+        response = client.post(url, data=files)
+    assert response.status_code == 400
+    mock_save.assert_not_called()
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "core_path",
+    list((FIXTURES / "valid_no_sig").glob("*.core")),
+    ids=lambda p: f"valid_no_sig/{p.name}"
+)
+def test_publish_valid_core_no_sig(client, mocker, core_path):
+    url = reverse('core_directory:publish')
+    mock_save = mocker.patch('django.core.files.storage.default_storage.save', return_value='test_core.core')
+    
+    with open(core_path, "rb") as f_core:
+        files = {'core_file': SimpleUploadedFile(core_path.name, f_core.read(), content_type="application/x-yaml")}
+        response = client.post(url, data=files)
+    data = response.json()
+    assert response.status_code == 201
+    assert "message" in data
+    assert "Core published successfully" in data["message"]
+    mock_save.assert_called_once()
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "core_path",
+    list((FIXTURES / "invalid_no_sig").glob("*.core")),
+    ids=lambda p: f"invalid_no_sig/{p.name}"
+)
+def test_publish_invalid_core_no_sig(client, mocker, core_path):
+    url = reverse('core_directory:publish')
+    mock_save = mocker.patch('django.core.files.storage.default_storage.save', return_value='test_core.core')
+    
+    with open(core_path, "rb") as f_core:
+        files = {'core_file': SimpleUploadedFile(core_path.name, f_core.read(), content_type="application/x-yaml")}
+        response = client.post(url, data=files)
+    assert response.status_code == 400
+    mock_save.assert_not_called()
+
+@pytest.mark.django_db
+def test_republish_existing_core(client, mocker):
+    url = reverse('core_directory:publish')
+    
+    core_file_content = (
+                            'CAPI=2:\n'
+                            'name: vendor:library:core:1.0.0\n'
+                            'description: "A valid core file for testing with signature."\n'
+                            'provider:\n'
+                            '   name: github\n'
+                            '   user: myuser\n'
+                            '   repo: myrepo\n'
+                            '   version: "v1.0.0"\n'
+                        ).encode('utf-8')
+
+    mock_save = mocker.patch('django.core.files.storage.default_storage.save', return_value='test_core.core')
+    mocker.patch('django.core.files.storage.default_storage.exists', side_effect=[False, True])
+ 
+    files = {'core_file': SimpleUploadedFile("test_core.core", core_file_content, content_type="application/x-yaml")}
+
+    response = client.post(url, data=files)
+    data = response.json()
+    
+    assert response.status_code == 201
+    assert "message" in data
+    assert "Core published successfully" in data["message"]
+
+    files = {'core_file': SimpleUploadedFile("test_core.core", core_file_content, content_type="application/x-yaml")}
+    response = client.post(url, data=files)
+    
+    data = response.json()
+    
+    assert response.status_code == 409
+    assert "error" in data
+    assert "already exists" in data["error"]
+    mock_save.assert_called_once()
+    

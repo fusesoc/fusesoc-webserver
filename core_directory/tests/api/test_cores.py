@@ -30,7 +30,7 @@ def test_multiple_cores_success(client):
         version_major=1,
         version_minor=0,
         version_patch=0,
-        core_url="https://example.com/core1",
+        core_file="core1",
         description="desc"
     )
     CorePackage.objects.create(
@@ -40,7 +40,7 @@ def test_multiple_cores_success(client):
         version_major=1,
         version_minor=0,
         version_patch=0,
-        core_url="https://example.com/core2_v1.0.0",
+        core_file="core2_v1.0.0",
         description="desc"
     )
     CorePackage.objects.create(
@@ -50,7 +50,7 @@ def test_multiple_cores_success(client):
         version_major=0,
         version_minor=1,
         version_patch=0,
-        core_url="https://example.com/core2_v0.1.0",
+        core_file="core2_v0.1.0",
         description="desc"
     )
 
@@ -74,7 +74,7 @@ def test_cores_with_filter(client):
         version_major=1,
         version_minor=0,
         version_patch=0,
-        core_url="https://example.com/foo_core",
+        core_file="foo_core",
         description="desc"
     )
     cp2 = CorePackage.objects.create(
@@ -84,7 +84,7 @@ def test_cores_with_filter(client):
         version_major=1,
         version_minor=0,
         version_patch=0,
-        core_url="https://example.com/bar_core",
+        core_file="bar_core",
         description="desc"
     )
 

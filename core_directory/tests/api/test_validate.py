@@ -24,7 +24,7 @@ def test_validate_no_core_file(client):
     data = response.json()
     assert response.status_code == 400
     assert "error" in data
-    assert "No file provided" in data["error"]
+    assert "No core file provided" in data["error"]
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(

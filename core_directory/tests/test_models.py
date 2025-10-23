@@ -38,7 +38,7 @@ def test_corepackage_creation_and_version_parsing():
         project=proj,
         vlnv_name="acme:lib1:core1:1.2.3-rc1",
         version="1.2.3-rc1",
-        core_url="https://example.com/core",
+        core_file="test.core",
         description="desc"
     )
     assert cp.version_major == 1
@@ -48,7 +48,7 @@ def test_corepackage_creation_and_version_parsing():
     assert str(cp) == f"{proj}:1.2.3-rc1"
     assert not cp.is_signed
     # Now add sig_url
-    cp.sig_url = "https://example.com/core.sig"
+    cp.signature_file = "test.core.sig"
     cp.save()
     assert cp.is_signed
 
@@ -61,7 +61,7 @@ def test_corepackage_invalid_version():
         project=proj,
         vlnv_name="acme:lib1:core1:bad",
         version="bad",
-        core_url="https://example.com/core",
+        core_file="test.core",
         description="desc"
     )
     with pytest.raises(ValidationError):
@@ -76,7 +76,7 @@ def test_unique_constraints():
         project=proj,
         vlnv_name="acme:lib1:core1:1.2.3",
         version="1.2.3",
-        core_url="https://example.com/core",
+        core_file="test.core",
         description="desc"
     )
     # Duplicate version for same project should fail
@@ -85,7 +85,7 @@ def test_unique_constraints():
             project=proj,
             vlnv_name="acme:lib1:core1:1.2.3",
             version="1.2.3",
-            core_url="https://example.com/core2",
+        core_file="test.core",
             description="desc"
         )
 
@@ -98,7 +98,7 @@ def test_fileset_and_dependency():
         project=proj,
         vlnv_name="acme:lib1:core1:1.2.3",
         version="1.2.3",
-        core_url="https://example.com/core",
+        core_file="test.core",
         description="desc"
     )
     fs = Fileset.objects.create(core_package=cp, name="fs1")
@@ -119,7 +119,7 @@ def test_target_and_target_configuration():
         project=proj,
         vlnv_name="acme:lib1:core1:1.2.3",
         version="1.2.3",
-        core_url="https://example.com/core",
+        core_file="test.core",
         description="desc"
     )
     fs = Fileset.objects.create(core_package=cp, name="fs1")
@@ -140,7 +140,7 @@ def test_corepackage_with_valid_spdx_license():
         project=proj,
         vlnv_name="acme:lib1:core1:1.0.0",
         version="1.0.0",
-        core_url="https://example.com/core",
+        core_file="test.core",
         description="desc",
         spdx_license=valid_license
     )
@@ -156,7 +156,7 @@ def test_corepackage_with_license_ref_fails():
         project=proj,
         vlnv_name="acme:lib1:core1:2.0.0",
         version="2.0.0",
-        core_url="https://example.com/core",
+        core_file="test.core",
         description="desc",
         spdx_license="LicenseRef-MyCustomLicense"
     )
@@ -172,7 +172,7 @@ def test_corepackage_with_invalid_license_fails():
         project=proj,
         vlnv_name="acme:lib1:core1:3.0.0",
         version="3.0.0",
-        core_url="https://example.com/core",
+        core_file="test.core",
         description="desc",
         spdx_license="NOT_A_VALID_LICENSE"
     )
@@ -188,7 +188,7 @@ def test_corepackage_with_blank_license():
         project=proj,
         vlnv_name="acme:lib1:core1:4.0.0",
         version="4.0.0",
-        core_url="https://example.com/core",
+        core_file="test.core",
         description="desc"
     )
     assert cp.spdx_license is None or cp.spdx_license == ""
