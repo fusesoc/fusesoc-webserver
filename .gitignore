@@ -9,6 +9,9 @@ db.sqlite3
 # collected static files
 /staticfiles/
 
+# Ignore media files
+/media/
+
 # Virtual Environment
 .env
 venv/

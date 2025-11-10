@@ -94,10 +94,10 @@ class Cores(APIView):
 
 
 class GetCore(APIView):
-    """Endpoint for downloading a FuseSoC core package file by VLNV name."""
+    """Endpoint for downloading a FuseSoC core package file or its signature by VLNV name."""
     @extend_schema_with_429(
-        summary='Download a FuseSoC Core Package',
-        description='Provide the FuseSoC Core Package as a .core file to the user.',
+        summary='Download a FuseSoC Core Package or Signature',
+        description=('Provide the FuseSoC Core Package as a `.core` file or its signature to the user.'),
         parameters=[
             OpenApiParameter(
                 name='core',
@@ -105,23 +105,36 @@ class GetCore(APIView):
                 required=True,
                 type=OpenApiTypes.STR,
                 location=OpenApiParameter.QUERY
-            )
+            ),
+            OpenApiParameter(
+                name='signature',
+                description=(
+                    'Returns the signature file instead of the core file if set to a truthy value (1, true, yes).'
+                ),
+                required=False,
+                type=OpenApiTypes.BOOL,
+                location=OpenApiParameter.QUERY
+            ),
         ],
         responses={
-            200: OpenApiResponse(description='FuseSoC Core Package successfully retrieved'),
-            404: OpenApiResponse(description='FuseSoC Core Package not found')
+            200: OpenApiResponse(description='FuseSoC Core Package or signature file successfully retrieved'),
+            400: OpenApiResponse(description='Missing required query parameter'),
+            404: OpenApiResponse(description='FuseSoC Core Package or requested file not found'),
         }
     )
     def get(self, request):
-        """Download a FuseSoC core package file by VLNV name.
+        """Download a FuseSoC core package file or its signature by VLNV name.
 
         Query Parameters:
             core (str): The VLNV name of the core package to download (e.g., 'acme:lib1:foo:1.0.0').
+            signature (bool, optional): If set to a truthy value (1, true, yes), returns the signature file (.sig)
+                instead of the core file.
 
         Returns:
-            HttpResponse: The core file as an attachment, or error message if not found.
+            HttpResponse: The core file or signature file as an attachment, or error message if not found.
         """
         requested_core_vlnv = request.query_params.get('core', '')
+        want_signature = request.query_params.get('signature', '').lower() in ('1', 'true', 'yes')
 
         if not requested_core_vlnv:
             return Response(
@@ -132,14 +145,27 @@ class GetCore(APIView):
         try:
             core_object = CorePackage.objects.get(vlnv_name=requested_core_vlnv)
 
-            if core_object:
-                response = HttpResponse(core_object.core_file.file, content_type='application/octet-stream')
-                response['Content-Disposition'] = f'attachment; filename={core_object.sanitized_vlnv}.core'
-                return response
-            return Response(
-                {'error': f'FuseSoC Core Package {requested_core_vlnv} not found.'},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            if want_signature:
+                if not core_object.signature_file:
+                    return Response(
+                        {'error': f'Signature file for {requested_core_vlnv} not found.'},
+                        status=status.HTTP_404_NOT_FOUND
+                    )
+                file_field = core_object.signature_file
+                filename = f'{core_object.sanitized_vlnv}.core.sig'
+            else:
+                if not core_object.core_file:
+                    return Response(
+                        {'error': f'FuseSoC Core Package {requested_core_vlnv} not found.'},
+                        status=status.HTTP_404_NOT_FOUND
+                    )
+                file_field = core_object.core_file
+                filename = f'{core_object.sanitized_vlnv}.core'
+
+            response = HttpResponse(file_field.file, content_type='application/octet-stream')
+            response['Content-Disposition'] = f'attachment; filename={filename}'
+            return response
+
         except CorePackage.DoesNotExist:
             return Response(
                 {'error': f'FuseSoC Core Package {requested_core_vlnv} not available.'},
@@ -147,7 +173,7 @@ class GetCore(APIView):
             )
         except FileNotFoundError:
             return Response(
-                {'error': f'FuseSoC Core Package {requested_core_vlnv} not available.'},
+                {'error': f'Requested file for {requested_core_vlnv} not available.'},
                 status=status.HTTP_404_NOT_FOUND
             )
 

@@ -2,7 +2,7 @@
 -r requirements.in
 
 # Development tools
-pip-tools==7.5.0
+pip-tools==7.5.1
 
 # Pylint static code analyser
 pylint==3.3.8
