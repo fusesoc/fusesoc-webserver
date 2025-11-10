@@ -9,11 +9,11 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 
 from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand
+from django.core.files.storage import default_storage
 
 from rest_framework.exceptions import ValidationError as DRFValidationError
 
 from core_directory.serializers import CoreSerializer
-from core_directory.storages.github import GitHubStorage
 from core_directory.models import CorePackage
 
 class Command(BaseCommand):
@@ -57,31 +57,14 @@ class Command(BaseCommand):
 
     def initialize_from_storage(self):
         """
-        Loads core and signature files from the configured GitHub repository into the database.
-
-        This method uses the GitHubStorage backend to list and retrieve all `.core` files (and their
-        corresponding `.sig` files, if present) from the root of the repository. For each core file,
-        it creates a Django ContentFile object and passes it, along with the signature file (if available),
-        to the CoreSerializer for validation and saving. If the storage backend supports cache prefill,
-        the cache is prefilled before processing files.
-
-        Any errors encountered during validation or saving are printed to the command output.
-
-        Raises:
-            RuntimeError: If the storage cache cannot be prefilled or if required files are missing.
-            FileNotFoundError: If a core or signature file cannot be found in the repository.
-
-        Side Effects:
-            - Populates the database with CorePackage and related objects for each valid core file.
-            - Prints progress and error messages to the command output.
+        Loads core and signature files from the configured backend storage into the database.
         """
-
-        storage = GitHubStorage()
+        storage = default_storage
 
         # Prefill cache if supported
         prefill = getattr(storage, "prefill_cache", None)
         if callable(prefill):
-            self.stdout.write('Prefilling storage cache from GitHub zip archive...')
+            self.stdout.write('Prefilling storage cache...')
             try:
                 prefill()
                 self.stdout.write(self.style.SUCCESS('Cache prefilled.'))
@@ -102,19 +85,16 @@ class Command(BaseCommand):
 
             data = {
                 'core_file': core_file_object,
-                'core_url': storage.url(core_filename)
             }
 
             # Attach signature file if present
             if core_filename in sig_files:
                 sig_filename = sig_files[core_filename]
-
                 with storage.open(sig_filename, 'rb') as f:
                     sig_file_object = ContentFile(f.read())
                     sig_file_object.name = sig_filename
                     sig_file_object.size = sig_file_object.size
                 data['signature_file'] = sig_file_object
-                data['sig_url'] = storage.url(sig_filename)
 
             # Use the serializer to create database entries
             serializer = CoreSerializer(data=data)

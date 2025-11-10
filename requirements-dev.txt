@@ -19,6 +19,12 @@ attrs==25.3.0
     #   simplesat
 babel==2.17.0
     # via sphinx
+boto3==1.40.68
+    # via -r requirements.in
+botocore==1.40.69
+    # via
+    #   boto3
+    #   s3transfer
 build==1.2.2.post1
     # via pip-tools
 certifi==2025.6.15
@@ -53,8 +59,11 @@ dill==0.4.0
 django==5.2.1
     # via
     #   -r requirements.in
+    #   django-storages
     #   djangorestframework
     #   drf-spectacular
+django-storages==1.14.6
+    # via -r requirements.in
 djangorestframework==3.16.0
     # via
     #   -r requirements.in
@@ -95,6 +104,10 @@ jinja2==3.1.6
     #   edalize
     #   pytest-html
     #   sphinx
+jmespath==1.0.1
+    # via
+    #   boto3
+    #   botocore
 jsonschema==4.24.0
     # via
     #   -r requirements.in
@@ -112,7 +125,7 @@ packaging==25.0
     #   build
     #   pytest
     #   sphinx
-pip-tools==7.5.0
+pip-tools==7.5.1
     # via -r requirements-dev.in
 platformdirs==4.3.8
     # via pylint
@@ -167,6 +180,8 @@ pytest-metadata==3.1.1
     # via pytest-html
 pytest-mock==3.14.1
     # via -r requirements-dev.in
+python-dateutil==2.9.0.post0
+    # via botocore
 python-dotenv==1.1.1
     # via -r requirements.in
 pyyaml==6.0.2
@@ -188,12 +203,16 @@ rpds-py==0.25.1
     # via
     #   jsonschema
     #   referencing
+s3transfer==0.14.0
+    # via boto3
 semver==3.0.4
     # via -r requirements.in
 simplesat==0.9.2
     # via fusesoc
 six==1.17.0
-    # via simplesat
+    # via
+    #   python-dateutil
+    #   simplesat
 smmap==5.0.2
     # via gitdb
 snowballstemmer==3.0.1
@@ -236,6 +255,7 @@ uritemplate==4.2.0
     # via drf-spectacular
 urllib3==2.4.0
     # via
+    #   botocore
     #   pygithub
     #   requests
 wheel==0.45.1

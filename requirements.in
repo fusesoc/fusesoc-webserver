@@ -4,6 +4,12 @@ Django==5.2.1
 # REST framework for building APIs
 djangorestframework==3.16.0
 
+# Django storage backends
+django-storages==1.14.6
+
+# AWS S3 SDK
+boto3==1.40.68
+
 # OpenAPI 3.0 schema generation for DRF
 drf-spectacular==0.28.0
 

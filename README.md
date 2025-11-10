@@ -60,23 +60,35 @@ FuseSoC-PD is ideal for teams and communities who want a reliable, transparent, 
 ## Database Consistency & Initialization
 
 **Note:**
-The database is not the primary source of truth. All core package data is stored in a configured GitHub repository.
-**If the database is empty on application startup, it will automatically be initialized from the GitHub repository.**
-This ensures the database always matches the repository contents. You can also manually re-initialize the database at any time using:
+The database is not the primary source of truth. All core package data is stored in the configured backend storage (by default, a GitHub repository, but you can use any Django-compatible storage backend).
+
+**If the database is empty on application startup, it will automatically be initialized from the backend storage.**
+This ensures the database always matches the storage contents. You can also manually re-initialize the database at any time using:
 
 ```bash
 python manage.py init_db
 ```
 
-- This command clones the GitHub repo, reads all `.core` and `.sig` files, and populates the database accordingly.
-- The database can always be rebuilt from the GitHub repo, ensuring consistency with the repository contents.
-- **Do not rely on the database as a persistent store for core data; GitHub is the canonical source.**
+This command reads all .core and .sig files from the configured storage backend (GitHub, S3, local filesystem, etc.) and populates the database accordingly.
+The database can always be rebuilt from the backend storage, ensuring consistency with the canonical source.
+Do not rely on the database as a persistent store for core data; the backend storage is the canonical source.
+Storage Backend Configuration:
 
+All storage backend and application configuration is managed via environment variables in your .env file.
+Copy .env.example to .env and update the values as needed for your deployment.
+To select the storage backend, set the STORAGE_BACKEND variable in .env:
+# Options: 'local', 'github', 's3'
+STORAGE_BACKEND=local
+The actual storage class is determined in settings.py based on this alias. For example:
+local → Local filesystem storage
+github → GitHub-backed storage
+s3 → S3 compatible storage
+For S3, GitHub, or other backends, set any required credentials in .env as shown in .env.example.
+If your storage backend supports cache prefill (e.g. for GitHub), the init_db command will use it automatically for efficient initialization.
 
-**Note:**
-*If you update the SPDX license list while the server is running, the changes will only take effect after you restart the application/server. This ensures the new license data is loaded into memory.*
+Note: If you update the SPDX license list while the server is running, the changes will only take effect after you restart the application/server. This ensures the new license data is loaded into memory.
 
-The command downloads the latest SPDX license list and stores it at the path specified by the `SPDX_LICENSES_PATH` setting in your Django configuration.
+The command downloads the latest SPDX license list and stores it at the path specified by the SPDX_LICENSES_PATH setting in your Django configuration.
 
 ---
 

@@ -174,16 +174,73 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Default file storage backend
+# Storage backend configuration
 # https://docs.djangoproject.com/en/stable/ref/settings/#default-file-storage
-STORAGES  = {
-    "default": {
-        "BACKEND": "core_directory.storages.github.GitHubStorage",
-    },
-    "staticfiles": {
-        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
-    },
-}
+# Storage backend selection: 'github', 'local', or 's3'
+STORAGE_BACKEND = os.getenv('STORAGE_BACKEND', 'local').lower()
+
+if STORAGE_BACKEND == 'local':
+    # Local filesystem storage
+    local_media_root = os.path.join(BASE_DIR, os.getenv('LOCAL_MEDIA_ROOT', 'media'))
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+            "OPTIONS": {
+                "location": local_media_root,
+            },
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
+    MEDIA_ROOT = local_media_root
+    MEDIA_URL = '/media/'
+elif STORAGE_BACKEND == 'github':
+    # Custom GitHub storage backend
+    STORAGES = {
+        "default": {
+            "BACKEND": "core_directory.storages.github.GitHubStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
+    MEDIA_ROOT = os.getenv('GITHUB_STORAGE_CACHE_DIR', './tmp/github_storage_cache')
+    MEDIA_URL = '/media/'  # Adjust if your GitHub backend serves files differently
+
+elif STORAGE_BACKEND == 's3':
+    # S3-compatible storage (Amazon S3, MinIO, Wasabi, etc.)
+    INSTALLED_APPS += ['storages']
+    AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
+    AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
+    AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME')
+    AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME', 'us-east-1')
+    AWS_S3_ENDPOINT_URL = os.getenv('AWS_S3_ENDPOINT_URL', '')  # For non-AWS S3
+    AWS_S3_CUSTOM_DOMAIN = os.getenv('AWS_S3_CUSTOM_DOMAIN', '')
+    AWS_DEFAULT_ACL = None
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_QUERYSTRING_AUTH = False
+
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
+
+    # MEDIA_URL: Use custom domain if set, otherwise use endpoint/bucket
+    if AWS_S3_CUSTOM_DOMAIN:
+        MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/"
+    elif AWS_S3_ENDPOINT_URL:
+        MEDIA_URL = f"{AWS_S3_ENDPOINT_URL.rstrip('/')}/{AWS_STORAGE_BUCKET_NAME}/"
+    else:
+        MEDIA_URL = f"https://{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/"
+    MEDIA_ROOT = ''
+
+else:
+    raise ValueError(f"Unknown STORAGE_BACKEND: {STORAGE_BACKEND}")
 
 REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',

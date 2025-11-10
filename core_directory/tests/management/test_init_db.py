@@ -64,7 +64,7 @@ def test_initialize_from_storage_prefill_and_success(monkeypatch, fake_storage):
     cmd.stdout = io.StringIO()
 
     # Patch GitHubStorage to return our fake storage
-    monkeypatch.setattr("core_directory.management.commands.init_db.GitHubStorage", lambda: fake_storage)
+    monkeypatch.setattr("core_directory.management.commands.init_db.default_storage", fake_storage)
     # Add a prefill_cache method
     fake_storage.prefill_cache = mock.Mock()
 
@@ -89,7 +89,7 @@ def test_initialize_from_storage_prefill_error(monkeypatch, fake_storage):
     cmd = Command()
     cmd.stdout = io.StringIO()
 
-    monkeypatch.setattr("core_directory.management.commands.init_db.GitHubStorage", lambda: fake_storage)
+    monkeypatch.setattr("core_directory.management.commands.init_db.default_storage", fake_storage)
     # Simulate prefill_cache raising RuntimeError
     fake_storage.prefill_cache = mock.Mock(side_effect=RuntimeError("fail prefill"))
 
@@ -106,7 +106,7 @@ def test_initialize_from_storage_serializer_invalid(monkeypatch, fake_storage):
     cmd = Command()
     cmd.stdout = io.StringIO()
 
-    monkeypatch.setattr("core_directory.management.commands.init_db.GitHubStorage", lambda: fake_storage)
+    monkeypatch.setattr("core_directory.management.commands.init_db.default_storage", fake_storage)
     fake_storage.prefill_cache = mock.Mock()
 
     fake_serializer = mock.Mock()
@@ -123,7 +123,7 @@ def test_initialize_from_storage_save_exception(monkeypatch, fake_storage):
     cmd = Command()
     cmd.stdout = io.StringIO()
 
-    monkeypatch.setattr("core_directory.management.commands.init_db.GitHubStorage", lambda: fake_storage)
+    monkeypatch.setattr("core_directory.management.commands.init_db.default_storage", fake_storage)
     fake_storage.prefill_cache = mock.Mock()
 
     fake_serializer = mock.Mock()
