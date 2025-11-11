@@ -195,6 +195,10 @@ if STORAGE_BACKEND == 'local':
     }
     MEDIA_ROOT = local_media_root
     MEDIA_URL = '/media/'
+
+    # Ensure the media directory exists for local storage
+    os.makedirs(MEDIA_ROOT, exist_ok=True)
+
 elif STORAGE_BACKEND == 'github':
     # Custom GitHub storage backend
     STORAGES = {
