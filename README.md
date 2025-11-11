@@ -30,6 +30,8 @@ FuseSoC-PD is ideal for teams and communities who want a reliable, transparent, 
 - [Environment Variables](#environment-variables)
 - [Development](#development)
   - [VS Code Configuration](#vs-code-configuration)
+- [HTTP/HTTPS and DJANGO_DEBUG](#httphttps-and-django_debug)
+- [Troubleshooting](#troubleshooting)
 - [Notes](#notes)
 - [License](#license)
 
@@ -39,16 +41,25 @@ FuseSoC-PD is ideal for teams and communities who want a reliable, transparent, 
 
 1. **Clone & Configure**
     ```bash
-    git clone <your-repo-url>
-    cd <your-repo-directory>
+    git clone https://github.com/fusesoc/fusesoc-webserver.git
+    cd fusesoc-webserver
     cp .env.example .env  # Copy example env and edit as needed
     ```
 
-2. **Build & Run with Docker**
+2. **Configure Environment**
+    - Edit `.env` to set up your storage backend and other settings.
+    - **For local development**, set:
+      ```
+      DJANGO_DEBUG=True
+      ```
+      This allows you to run the server using HTTP at [http://localhost:8000](http://localhost:8000).
+    - By default, the server enforces HTTPS for production safety. Setting `DJANGO_DEBUG=True` disables HTTPS enforcement and enables easier local testing.
+
+3. **Build & Run with Docker**
     ```bash
     docker compose up --build
     ```
-    App runs at [http://localhost:8000](http://localhost:8000).
+    App runs at [http://localhost:8000](http://localhost:8000) (if `DJANGO_DEBUG=True`).
 
     > **Note on static files:**  
     > Static files are automatically collected to the `/staticfiles` directory inside the Docker container during build or startup.  
@@ -72,6 +83,7 @@ python manage.py init_db
 This command reads all .core and .sig files from the configured storage backend (GitHub, S3, local filesystem, etc.) and populates the database accordingly.
 The database can always be rebuilt from the backend storage, ensuring consistency with the canonical source.
 Do not rely on the database as a persistent store for core data; the backend storage is the canonical source.
+
 Storage Backend Configuration:
 
 All storage backend and application configuration is managed via environment variables in your .env file.
@@ -141,17 +153,14 @@ FuseSoC-PD uses the [SPDX license list](https://spdx.org/licenses/) to validate 
 
 All required environment variables are listed in `.env.example`.
 Copy this file to `.env` and update the values as needed.
-
----
-
 ## Development
 
 To set up a development environment for FuseSoC-PD:
 
 1. **Clone the repository:**
     ```bash
-    git clone https://github.com/fusesoc/fusesoc-pd.git
-    cd fusesoc-pd
+    git clone https://github.com/fusesoc/fusesoc-webserver.git
+    cd fusesoc-webserver
     ```
 
 2. **Set up a virtual environment:**
@@ -174,6 +183,8 @@ To set up a development environment for FuseSoC-PD:
     ```bash
     python manage.py runserver
     ```
+    - By default, the server will run with HTTPS enforcement unless `DJANGO_DEBUG=True` is set in your `.env`.
+    - For local development, ensure `DJANGO_DEBUG=True` in your `.env` to allow HTTP.
 
 6. **(Optional) Build documentation locally:**
     ```bash
@@ -210,9 +221,37 @@ This repository includes recommended Visual Studio Code settings and launch conf
     - `Debugpy: Server` — runs and debugs the server.
     - `Debugpy: Pytest (Current File)` — runs and debugs single test file.
 5. The `.vscode/settings.json` configures VS Code to use `pytest` for testing.
+
+## HTTP/HTTPS and DJANGO_DEBUG
+
+- **Production deployments:**  
+  By default, HTTPS is enforced for security. You should run Django behind a reverse proxy (such as Nginx or Caddy) that handles HTTPS termination.
+- **Local development:**  
+  Set `DJANGO_DEBUG=True` in your `.env` to disable HTTPS enforcement and allow HTTP access at [http://localhost:8000](http://localhost:8000).
+- **Docker:**  
+  The Docker setup respects `DJANGO_DEBUG`. For local testing, set `DJANGO_DEBUG=True` in your `.env`.
+
+**Example .env snippet for local development:**
+DJANGO_DEBUG=True STORAGE_BACKEND=local
+
+
 ---
 
-## Notes
+## Troubleshooting
+
+### **Common SSL/HTTP Errors**
+
+- **ERR_SSL_PROTOCOL_ERROR** or browser SSL errors:
+  - Cause: The server is enforcing HTTPS, but you are trying to access it via HTTP.
+  - **Solution:** Set `DJANGO_DEBUG=True` in your `.env` and restart the server for local development.
+
+- **Cannot access server on HTTP:**
+  - Ensure `DJANGO_DEBUG=True` is set in your `.env`.
+  - Restart the Django server after changing `.env`.
+
+- **Production deployments:**
+  - Always use a reverse proxy (Nginx, Caddy, etc.) to terminate HTTPS and forward requests to Django.
+  - Do not set `DJANGO_DEBUG=True` in production.
 
 - **API rate limit:** 100/hour for every users.
 - **Static files:** Collected to `/staticfiles` in Docker.
