@@ -1,4 +1,8 @@
 """API views for FuseSoC Package Directory."""
+import os
+import tempfile
+import zipfile
+
 from django.db import IntegrityError, DatabaseError
 from django.http import HttpResponse
 from django.views.generic import TemplateView
@@ -300,3 +304,52 @@ class Validate(APIView):
         if serializer.is_valid():
             return Response({'message': 'Core file is valid'}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class GetArchive(APIView):
+    """Endpoint for downloading an archive of the FuseSoC Care Package Directory."""
+    @extend_schema_with_429(
+        summary='Download FuseSoC Core Package Directory Archive',
+        description='Provide a archive containing all core files in FuseSoC Package Directory.',
+        parameters=[
+        ],
+        responses={
+            200: OpenApiResponse(description='FuseSoC Core Package archive successfully retrieved'),
+            500: OpenApiResponse(description='Error message indicating why the validation failed')
+        }
+    )
+    def get(self, request):
+        """Download a FuseSoC core package archive.
+
+        Returns:
+            HttpResponse: The archive as an attachment, or error message if not found.
+        """
+        try:
+            with tempfile.TemporaryDirectory() as temp_dir:
+                archive_path = os.path.join(temp_dir, 'fusesoc_pd_archive.zip')
+                with zipfile.ZipFile(archive_path, 'w', zipfile.ZIP_DEFLATED) as archive:
+                    for core_package in CorePackage.objects.all():
+                        # Add core file
+                        if core_package.core_file:
+                            core_file_name = core_package.sanitized_vlnv + '.core'
+                            with core_package.core_file.open('rb') as f:
+                                archive.writestr(core_file_name, f.read())
+                        # Add signature file if present
+                        if core_package.is_signed and core_package.signature_file:
+                            sig_file_name = core_package.sanitized_vlnv + '.core.sig'
+                            with core_package.signature_file.open('rb') as f:
+                                archive.writestr(sig_file_name, f.read())
+
+                with open(archive_path, 'rb') as f:
+                    archive_file_data = f.read()
+
+                response = HttpResponse(archive_file_data, content_type='application/zip')
+                response['Content-Disposition'] = 'attachment; filename="fusesoc_pd_archive.zip"'
+                response['Content-Length'] = str(len(archive_file_data))
+                return response
+
+        except (FileNotFoundError, OSError, zipfile.BadZipFile) as err:
+            return Response(
+                {'error': f'Error retrieving archive: {err}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

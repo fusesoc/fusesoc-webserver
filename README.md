@@ -61,9 +61,9 @@ FuseSoC-PD is ideal for teams and communities who want a reliable, transparent, 
     ```
     App runs at [http://localhost:8000](http://localhost:8000) (if `DJANGO_DEBUG=True`).
 
-    > **Note on static files:**  
-    > Static files are automatically collected to the `/staticfiles` directory inside the Docker container during build or startup.  
-    > By default, static files are served by [WhiteNoise](https://whitenoise.evans.io/) within the Django application.  
+    > **Note on static files:**
+    > Static files are automatically collected to the `/staticfiles` directory inside the Docker container during build or startup.
+    > By default, static files are served by [WhiteNoise](https://whitenoise.evans.io/) within the Django application.
     > For larger or production deployments, you may optionally configure a dedicated web server (such as Nginx or Caddy) to serve static files from `/staticfiles`.
 
 ---
@@ -113,6 +113,7 @@ All endpoints are under `/api/v1/`:
 | `/health/`                 | GET    | API health check                         |
 | `/list/?filter=...`        | GET    | List available core packages             |
 | `/get/?core=...`           | GET    | Download a `.core` file by VLNV name     |
+| `/get_archive/`            | GET    | Download a `.zip` file with all cores    |
 | `/validate/`               | POST   | Validate a core file (`multipart/form`)  |
 | `/publish/`                | POST   | Publish a core file to GitHub            |
 
@@ -133,6 +134,7 @@ Easily search and browse packages in a clean interface.
 - `/cores/<vendor>/<library>/<core>/<version>/` — Core detail by VLNV (vendor, library, name, version)
 - `/vendors/` — List all vendors (with optional search)
 - `/vendors/<sanitized_name>/` — Vendor detail (with libraries and projects)
+- `/fusesoc_pd` — Shortcut to API endpoint `get_archive`
 
 ---
 
@@ -224,11 +226,11 @@ This repository includes recommended Visual Studio Code settings and launch conf
 
 ## HTTP/HTTPS and DJANGO_DEBUG
 
-- **Production deployments:**  
+- **Production deployments:**
   By default, HTTPS is enforced for security. You should run Django behind a reverse proxy (such as Nginx or Caddy) that handles HTTPS termination.
-- **Local development:**  
+- **Local development:**
   Set `DJANGO_DEBUG=True` in your `.env` to disable HTTPS enforcement and allow HTTP access at [http://localhost:8000](http://localhost:8000).
-- **Docker:**  
+- **Docker:**
   The Docker setup respects `DJANGO_DEBUG`. For local testing, set `DJANGO_DEBUG=True` in your `.env`.
 
 **Example .env snippet for local development:**

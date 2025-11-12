@@ -1,0 +1,8 @@
+CAPI=2:
+name: vendor:library:core:1.0.0
+description: "A valid core file for testing with signature."
+provider:
+  name: github
+  user: myuser
+  repo: myrepo
+  version: "v1.0.0"
