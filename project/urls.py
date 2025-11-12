@@ -26,6 +26,7 @@ from django.urls import include, path
 
 from core_directory.sitemaps import CorePackageSitemap, StaticViewSitemap, VendorSitemap
 from core_directory.views.system_views import robots_txt
+from core_directory.views.api_views import GetArchive
 from core_directory.views.web_views import (
     landing,
     core_detail,
@@ -70,6 +71,7 @@ urlpatterns = [
         name='vendor-detail'
     ),
 
+    path('fusesoc_pd/', GetArchive.as_view(), name='archive_get'),
     path('admin/', admin.site.urls),
     path('api/', include('core_directory.urls')),
 
