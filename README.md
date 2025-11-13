@@ -89,7 +89,7 @@ Storage Backend Configuration:
 All storage backend and application configuration is managed via environment variables in your .env file.
 Copy .env.example to .env and update the values as needed for your deployment.
 To select the storage backend, set the STORAGE_BACKEND variable in .env:
-# Options: 'local', 'github', 's3'
+### Options: 'local', 'github', 's3'
 STORAGE_BACKEND=local
 The actual storage class is determined in settings.py based on this alias. For example:
 local → Local filesystem storage
