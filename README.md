@@ -2,9 +2,9 @@
 [![Docs](https://github.com/fusesoc/fusesoc-webserver/actions/workflows/docs.yml/badge.svg?branch=main)](https://github.com/fusesoc/fusesoc-webserver/actions/workflows/docs.yml)
 [![Docker](https://github.com/fusesoc/fusesoc-webserver/actions/workflows/docker.yml/badge.svg?branch=main)](https://github.com/fusesoc/fusesoc-webserver/actions/workflows/docker.yml)
 [![Developer Docs](https://img.shields.io/badge/docs-source--code--reference-blue)](https://fusesoc.github.io/fusesoc-webserver/)
-# FuseSoC Package Database (FuseSoC-PD)
+# FuseSoC Package Directory (FuseSoC-PD)
 
-FuseSoC Package Database (FuseSoC-PD) is a web-based platform and RESTful API designed to manage, validate, and distribute [FuseSoC](https://fusesoc.github.io/) core packages. It provides both a user-friendly web interface and a robust API for interacting with a centralized collection of hardware IP cores, making it easier for developers and organizations to share, discover, and reuse hardware designs.
+FuseSoC Package Directory (FuseSoC-PD) is a web-based platform and RESTful API designed to manage, validate, and distribute [FuseSoC](https://fusesoc.github.io/) core packages. It provides both a user-friendly web interface and a robust API for interacting with a centralized collection of hardware IP cores, making it easier for developers and organizations to share, discover, and reuse hardware designs.
 
 The system is built with Django and Django REST Framework, and uses a GitHub repository as the canonical source of truth for all core package data. Core files are stored, retrieved, and versioned directly on GitHub, ensuring transparency and traceability. The application supports core file validation against both JSON schemas and FuseSoC’s own parser, and allows users to publish new cores or validate existing ones through the API or web UI.
 
@@ -23,7 +23,11 @@ FuseSoC-PD is ideal for teams and communities who want a reliable, transparent, 
 ## Table of Contents
 
 - [Quick Start](#quick-start)
+  - [Using FuseSoC Package Directory with FuseSoC](#using-fusesoc-package-directory-with-fusesoc)
 - [Database Consistency & Initialization](#database-consistency--initialization)
+- [Storage Backend Configuration](#storage-backend-configuration)
+  - [GitHub Setup](#github-setup)
+  - [S3 Setup](#s3-setup)
 - [API Endpoints](#api-endpoints)
 - [Web UI](#web-ui)
 - [SPDX License List Management](#spdx-license-list-management)
@@ -32,7 +36,6 @@ FuseSoC-PD is ideal for teams and communities who want a reliable, transparent, 
   - [VS Code Configuration](#vs-code-configuration)
 - [HTTP/HTTPS and DJANGO_DEBUG](#httphttps-and-django_debug)
 - [Troubleshooting](#troubleshooting)
-- [Notes](#notes)
 - [License](#license)
 
 ---
@@ -66,6 +69,17 @@ FuseSoC-PD is ideal for teams and communities who want a reliable, transparent, 
     > By default, static files are served by [WhiteNoise](https://whitenoise.evans.io/) within the Django application.
     > For larger or production deployments, you may optionally configure a dedicated web server (such as Nginx or Caddy) to serve static files from `/staticfiles`.
 
+
+### Using FuseSoC Package Directory with FuseSoC
+
+To add the package directory as a FuseSoC library, run:
+
+```shell
+fusesoc library add --sync-type=url https://<hostname>/fusesoc_pd
+```
+
+Replace `<hostname>` with the hostname of your FuseSoC-PD deployment.
+
 ---
 
 ## Database Consistency & Initialization
@@ -84,23 +98,52 @@ This command reads all .core and .sig files from the configured storage backend 
 The database can always be rebuilt from the backend storage, ensuring consistency with the canonical source.
 Do not rely on the database as a persistent store for core data; the backend storage is the canonical source.
 
-Storage Backend Configuration:
+## Storage Backend Configuration
 
 All storage backend and application configuration is managed via environment variables in your .env file.
 Copy .env.example to .env and update the values as needed for your deployment.
 To select the storage backend, set the STORAGE_BACKEND variable in .env:
-### Options: 'local', 'github', 's3'
-STORAGE_BACKEND=local
+
+ - Local storage backend, `STORAGE_BACKEND=local`
+ - Github storage backend, `STORAGE_BACKEND=github`
+ - S3 storage backend, `STORAGE_BACKEND=s3`
+
+### Github Setup
+
+Create a Github repository. Note the path to the repository.
+
+#### Generate a Personal Access Tokens to the repository.
+
+ - Go to **GitHub** → **Settings** → **Developer Settings**
+ - Go to **Personal Access Tokens** → **Fine-grained tokens**
+ - Click **Generate new token**.
+ - Write a name and a description for the token.
+ - Select **Only select repositories** and select the package directory repository.
+ - Click **+ Add permission**.
+   - Add **Content** permission.
+   - Change the **Content** permission to **Read and write**.
+ - Click **Generate token**
+
+⚠️ **Be sure to copy the token code.**
+
+#### Configure FuseSoC Package Directory
+
+In the FuseSoC Package Directory environment file, `.env`. Update the github configuration,
+
+ - `STORAGE_BACKEND`, set to `github`.
+ - `GITHUB_REPO`, set this to the repository path, `<owner/<repository>`, at Github.
+ - `GITHUB_ACCESS_TOKEN`, set this to the generated personal access token.
+
+### S3 Setup
+
+`STORAGE_BACKEND=s3`
+
+Add the credentials in the environment file, `.env`.
+
+
 The actual storage class is determined in settings.py based on this alias. For example:
-local → Local filesystem storage
-github → GitHub-backed storage
-s3 → S3 compatible storage
-For S3, GitHub, or other backends, set any required credentials in .env as shown in .env.example.
+
 If your storage backend supports cache prefill (e.g. for GitHub), the init_db command will use it automatically for efficient initialization.
-
-Note: If you update the SPDX license list while the server is running, the changes will only take effect after you restart the application/server. This ensures the new license data is loaded into memory.
-
-The command downloads the latest SPDX license list and stores it at the path specified by the SPDX_LICENSES_PATH setting in your Django configuration.
 
 ---
 
@@ -155,6 +198,8 @@ FuseSoC-PD uses the [SPDX license list](https://spdx.org/licenses/) to validate 
 
 All required environment variables are listed in `.env.example`.
 Copy this file to `.env` and update the values as needed.
+
+
 ## Development
 
 To set up a development environment for FuseSoC-PD:
